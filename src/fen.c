@@ -85,8 +85,6 @@ board_t* parse_fen(const char* fen, colour_t* out_turn)
     const char* p = fen;
     while (*p && rank < height && *p != ' ')
     {
-        printf("rank = '%d'\n", rank);
-        printf("p = '%s'\n", p);
         if (*p == '/')
         {
             rank++;
@@ -106,8 +104,6 @@ board_t* parse_fen(const char* fen, colour_t* out_turn)
     }
     while (*p && *p == ' ')
         p++;
-    printf("*p = %c\n", *p);
-    printf("(int)*p = %d\n", (int)*p);
     if (*p == 'w')
         *out_turn = COLOUR_WHITE;
     else if (*p == 'b')
