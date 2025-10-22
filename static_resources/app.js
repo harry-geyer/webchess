@@ -198,22 +198,21 @@ script.onload = function () {
             draggedSquare = e.target;
             e.dataTransfer.setData('text/plain', '');
 
-            // create a temporary element for drag image
             const dragImage = document.createElement('div');
             dragImage.style.fontSize = '44px';
             dragImage.style.fontFamily = 'Arial';
             dragImage.style.color = e.target.style.color || (e.target.classList.contains('white') ? '#000' : '#fff');
             dragImage.textContent = e.target.dataset.piece ? pieceUnicode[e.target.dataset.piece] : '';
             dragImage.style.position = 'absolute';
-            dragImage.style.top = '-1000px'; // offscreen
+            dragImage.style.top = '-1000px';
             document.body.appendChild(dragImage);
 
-            e.dataTransfer.setDragImage(dragImage, 18, 18); // center the piece
+            e.dataTransfer.setDragImage(dragImage, 18, 18);
             setTimeout(() => document.body.removeChild(dragImage), 0);
         }
 
         function onDragOver(e) {
-            e.preventDefault(); // allow drop
+            e.preventDefault();
         }
 
         function onDrop(e) {
