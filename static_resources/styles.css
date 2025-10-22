@@ -1,12 +1,10 @@
-/* Base Styles */
 body {
     margin: 0;
     font-family: 'Arial', sans-serif;
-    background-color: #0d0d0d; /* Slightly softer black */
-    color: #333;
+    background-color: #0d0d0d;
+    color: #ccc;
 }
 
-/* Header */
 .header {
     display: flex;
     justify-content: space-between;
@@ -14,7 +12,7 @@ body {
     background-color: #111;
     color: #fff;
     padding: 15px 30px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
 .header h1 {
@@ -33,11 +31,8 @@ body {
     transition: color 0.3s;
 }
 
-.header nav a:hover {
-    color: #ff6f61;
-}
+.header nav a:hover { color: #ff6f61; }
 
-/* Main Container */
 .container {
     display: flex;
     justify-content: center;
@@ -47,7 +42,6 @@ body {
     overflow: hidden;
 }
 
-/* Canvas Background */
 .canvas-container {
     position: absolute;
     top: 0;
@@ -63,25 +57,34 @@ canvas.emscripten {
     background-color: #000;
 }
 
-/* Content Box */
 .content {
-    background-color: #fff;
+    background-color: #1a1a1a;
     padding: 30px;
     z-index: 2;
     position: relative;
     margin: auto;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
 }
 
-/* Chessboard */
+.chess-section { display: flex; flex-direction: column; align-items: center; }
+
+.chess-board-container {
+    background-color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+}
+
 #chessboard {
     display: grid;
-    grid-template-columns: repeat(8, 60px);
-    grid-template-rows: repeat(8, 60px);
-    border: 2px solid #333;
-    margin-bottom: 15px;
-    border-radius: 8px;
+    grid-template-columns: repeat(8,60px);
+    grid-template-rows: repeat(8,60px);
+    border: 2px solid #666;
+    margin-bottom: 0;
     overflow: hidden;
 }
 
@@ -96,24 +99,58 @@ canvas.emscripten {
     transition: transform 0.2s, background-color 0.3s;
 }
 
-.square:hover {
-    transform: scale(1.1);
-}
+.square:hover { transform: scale(1.1); }
 
-.square.white {
-    background-color: #f0f0f0;
-}
+.square.white { background-color: #f0f0f0; }
+.square.black { background-color: #666; color: #fff; }
 
-.square.black {
-    background-color: #666;
-    color: #fff;
-}
-
-/* Status & Button */
-#status {
-    margin-top: 15px;
-    display: block;
+.info-bar {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr auto;
+    align-items: center;
+    width: 100%;
+    padding: 6px 12px;
     font-weight: 500;
+    font-size: 14px;
+    color: #fff;
+    border: none;
+}
+
+.info-bar span {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    text-align: center;
+    min-width: 40px;
+}
+
+.info-bar span + span {
+    border-left: 1px solid #555;
+    padding-left: 12px;
+    margin-left: 12px;
+}
+
+#status {
+    justify-content: flex-start;
+}
+
+#takenWhite {
+    width: 25%;
+    justify-content: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#takenBlack {
+    width: 25%;
+    justify-content: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#turnIndicator {
+    justify-content: flex-end;
+    display: flex;
 }
 
 button {
@@ -123,11 +160,35 @@ button {
     background-color: #ff6f61;
     color: #fff;
     font-size: 1rem;
-    border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.3s;
 }
 
-button:hover {
-    background-color: #e65b50;
+button:hover { background-color: #e65b50; }
+
+.move-list-container {
+    width: 180px;
+    background: #222;
+    padding: 15px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+    font-size: 14px;
+    max-height: 520px;
+    overflow-y: auto;
+    border: none;
 }
+
+.move-list {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 6px;
+}
+
+.move-list div {
+    padding: 4px 6px;
+    background-color: #333;
+    color: #fff;
+    transition: background-color 0.3s;
+}
+
+.move-list div:nth-child(even) { background-color: #2a2a2a; }
+.move-list div.highlight { background-color: #ff6f61; color: #fff; }

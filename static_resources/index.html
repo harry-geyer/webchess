@@ -16,11 +16,25 @@
         </div>
 
         <div class="content">
-            <div id="chessboard"></div>
-            <span id="status">Loading...</span>
-            <button id="resetBtn">Reset</button>
+            <div class="chess-section">
+                <div class="chess-board-container">
+                    <div id="chessboard"></div>
+                    <div class="info-bar">
+                        <span id="status">Loading...</span>
+                        <span id="takenWhite"></span>
+                        <span id="takenBlack"></span>
+                        <span id="turnIndicator">White to play</span>
+                    </div>
+                </div>
+                <button id="resetBtn">Reset</button>
+            </div>
+
+            <div class="move-list-container">
+                <div id="moveList" class="move-list"></div>
+            </div>
         </div>
     </div>
+
     <script src="app.js" type="text/javascript"></script>
 </body>
 </html>

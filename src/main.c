@@ -55,17 +55,10 @@ int get_status(void)
 
 
 EMSCRIPTEN_KEEPALIVE
-void apply_move_uci(const char* uci)
+bool apply_move_uci(const char* uci)
 {
     printf("move uci: '%s'\n", uci);
     board_t* b = game_get_board();
     move_t m = uci_to_move(b, uci);
-    if (game_apply_move(m))
-    {
-        printf("successful move\n");
-    }
-    else
-    {
-        printf("failed move\n");
-    }
+    return game_apply_move(m);
 }

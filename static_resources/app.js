@@ -9,6 +9,11 @@ script.onload = function () {
         const chessboardEl = document.getElementById('chessboard');
         const statusEl = document.getElementById('status');
         const resetBtn = document.getElementById('resetBtn');
+        const moveListEl = document.getElementById('moveList');
+        let moveHistory = [];
+        let capturedWhite = [];
+        let capturedBlack = [];
+        let previousBoard = defaultFen.split(' ')[0];
 
         const files = ['a','b','c','d','e','f','g','h'];
         let selectedSquare = null;
@@ -39,12 +44,10 @@ script.onload = function () {
             const squares = chessboardEl.children;
             let idx = 0;
 
-            // 🔧 Clear all squares first
             for (let i = 0; i < squares.length; i++) {
                 squares[i].textContent = '';
             }
 
-            // Now fill in with current FEN positions
             for (const rank of ranks) {
                 for (const char of rank) {
                     if (isNaN(char)) {
@@ -65,6 +68,7 @@ script.onload = function () {
             const fen = String.fromCharCode(...fenBuf).replace(/\0/g, '');
             Module._free(ptr);
             renderBoard(fen);
+            updateCapturedPieces(fen);
             const status = Module.ccall('get_status','number',[],[]);
             let statusText = '';
             switch (status) {
@@ -74,23 +78,92 @@ script.onload = function () {
                 case 3: statusText = 'Stalemate'; break;
             }
             statusEl.textContent=`Status: ${statusText}`;
+
+            const turnIndicatorEl = document.getElementById('turnIndicator');
+            const activeColor = fen.split(' ')[1]; // 'w' or 'b'
+            turnIndicatorEl.textContent = activeColor === 'w' ? 'White to play' : 'Black to play';
         }
 
-        function onSquareClick(e){
-            const sq=e.currentTarget;
-            if(!selectedSquare){ selectedSquare=sq; sq.style.outline='2px solid red'; }
-            else {
-                const from=selectedSquare; const to=sq;
-                const uci=`${files[from.dataset.file]}${parseInt(from.dataset.rank)+1}${files[to.dataset.file]}${parseInt(to.dataset.rank)+1}`;
-                Module.ccall('apply_move_uci', null, ['string'], [uci]);
-                updateBoard();
-                selectedSquare.style.outline='';
-                selectedSquare=null;
+        function renderMoveList() {
+            moveListEl.innerHTML = '';
+            for (let i = 0; i < moveHistory.length; i++) {
+                const moveText = document.createElement('div');
+                const moveNumber = Math.floor(i / 2) + 1;
+                const isWhiteMove = i % 2 === 0;
+                moveText.textContent = isWhiteMove
+                    ? `${moveNumber}. ${moveHistory[i]}`
+                    : `... ${moveHistory[i]}`;
+                moveListEl.prepend(moveText);
+            }
+            moveListEl.scrollTop = moveListEl.scrollHeight;
+        }
+
+        function updateCapturedPieces(fen) {
+            const boardPart = fen.split(' ')[0];
+            const ranks = boardPart.split('/');
+            const currentPieces = [];
+
+            for (const rank of ranks) {
+                for (const char of rank) {
+                    if (isNaN(char)) currentPieces.push(char);
+                }
+            }
+
+            const prevRanks = previousBoard.split('/');
+            const prevPieces = [];
+            for (const rank of prevRanks) {
+                for (const char of rank) {
+                    if (isNaN(char)) prevPieces.push(char);
+                }
+            }
+
+            for (const piece of prevPieces) {
+                const idx = currentPieces.indexOf(piece);
+                if (idx !== -1) currentPieces.splice(idx, 1);
+                else {
+                    if (piece === piece.toUpperCase()) capturedWhite.push(piece);
+                    else capturedBlack.push(piece);
+                }
+            }
+
+            previousBoard = boardPart;
+
+            let whiteText = capturedWhite.map(c => pieceUnicode[c] || '').join(' ');
+            document.getElementById('takenWhite').textContent = whiteText.length ? whiteText : "-";
+
+            let blackText = capturedBlack.map(c => pieceUnicode[c] || '').join(' ');
+            document.getElementById('takenBlack').textContent = blackText.length ? blackText : "-";
+        }
+
+        function onSquareClick(e) {
+            const sq = e.currentTarget;
+
+            if (!selectedSquare) {
+                selectedSquare = sq;
+                sq.style.outline = '2px solid red';
+            } else {
+                const from = selectedSquare;
+                const to = sq;
+                const piece = from.textContent;
+                const uci = `${files[from.dataset.file]}${parseInt(from.dataset.rank) + 1}${files[to.dataset.file]}${parseInt(to.dataset.rank) + 1}`;
+                const isValid = Module.ccall('apply_move_uci', 'number', ['string'], [uci]);
+                if (isValid) {
+                    moveHistory.push(uci + piece);
+                    renderMoveList();
+                    updateBoard();
+                } else {
+                    from.style.outline = '2px solid red';
+                    to.style.outline = '';
+                }
+                selectedSquare.style.outline = '';
+                selectedSquare = null;
             }
         }
 
-        resetBtn.addEventListener('click', ()=>{
+        resetBtn.addEventListener('click', () => {
             Module.ccall('init_game', null, ['number','number'], [8,8]);
+            moveHistory = [];
+            renderMoveList();
             updateBoard();
         });
 
