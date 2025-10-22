@@ -1,0 +1,133 @@
+/* Base Styles */
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #0d0d0d; /* Slightly softer black */
+    color: #333;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #111;
+    color: #fff;
+    padding: 15px 30px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.header h1 {
+    margin: 0;
+    flex-grow: 1;
+    text-align: center;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+}
+
+.header nav a {
+    color: #fff;
+    margin: 0 15px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.header nav a:hover {
+    color: #ff6f61;
+}
+
+/* Main Container */
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Canvas Background */
+.canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+canvas.emscripten {
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+}
+
+/* Content Box */
+.content {
+    background-color: #fff;
+    padding: 30px;
+    z-index: 2;
+    position: relative;
+    margin: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Chessboard */
+#chessboard {
+    display: grid;
+    grid-template-columns: repeat(8, 60px);
+    grid-template-rows: repeat(8, 60px);
+    border: 2px solid #333;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.square {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 36px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.3s;
+}
+
+.square:hover {
+    transform: scale(1.1);
+}
+
+.square.white {
+    background-color: #f0f0f0;
+}
+
+.square.black {
+    background-color: #666;
+    color: #fff;
+}
+
+/* Status & Button */
+#status {
+    margin-top: 15px;
+    display: block;
+    font-weight: 500;
+}
+
+button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    border: none;
+    background-color: #ff6f61;
+    color: #fff;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #e65b50;
+}
