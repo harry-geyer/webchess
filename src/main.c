@@ -6,9 +6,6 @@
 #include "fen.h"
 
 
-static colour_t current_turn = COLOUR_WHITE;
-
-
 EMSCRIPTEN_KEEPALIVE
 void init_game(int width, int height)
 {
@@ -22,18 +19,21 @@ EMSCRIPTEN_KEEPALIVE
 void set_fen(const char* fen)
 {
     printf("setting fen: '%s'\n", fen);
-    board_t* b = parse_fen(fen, &current_turn);
-    game_set_board(b);
+    colour_t turn = COLOUR_NONE;
+    board_t* b = parse_fen(fen, &turn);
+    game_set_board(b, turn);
     destroy_board(b);
 }
 
 
 EMSCRIPTEN_KEEPALIVE
-void get_fen(char* out_fen, int max_len)
+int get_fen(char* out_fen, int max_len)
 {
     board_t* b = game_get_board();
-    generate_fen(b, current_turn, out_fen, max_len);
+    colour_t turn = game_current_turn();
+    int len = generate_fen(b, turn, out_fen, max_len);
     printf("getting fen: '%.*s'\n", max_len, out_fen);
+    return len;
 }
 
 
@@ -60,5 +60,9 @@ bool apply_move_uci(const char* uci)
     printf("move uci: '%s'\n", uci);
     board_t* b = game_get_board();
     move_t m = uci_to_move(b, uci);
-    return game_apply_move(m);
+    if (!game_apply_move(m))
+    {
+        return false;
+    }
+    return true;
 }

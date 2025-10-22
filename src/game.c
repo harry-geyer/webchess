@@ -25,7 +25,7 @@ void game_init(const game_config_t* cfg)
 }
 
 
-void game_set_board(const board_t* b)
+void game_set_board(const board_t* b, colour_t turn)
 {
     if (!current_board)
         return;
@@ -34,6 +34,7 @@ void game_set_board(const board_t* b)
     {
         current_board->squares[i] = b->squares[i];
     }
+    current_turn = turn;
 }
 
 
@@ -81,4 +82,10 @@ bool game_apply_move(move_t m)
 game_status_t game_get_status(void)
 {
     return current_status;
+}
+
+
+colour_t game_current_turn(void)
+{
+    return current_turn;
 }

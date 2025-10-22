@@ -25,8 +25,9 @@ typedef enum
 
 
 void game_init(const game_config_t* cfg);
-void game_set_board(const board_t* b);
+void game_set_board(const board_t* b, colour_t turn);
 board_t* game_get_board(void);
 move_t game_get_best_move(void);
 bool game_apply_move(move_t m);
 game_status_t game_get_status(void);
+colour_t game_current_turn(void);

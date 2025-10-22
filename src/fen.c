@@ -83,8 +83,10 @@ board_t* parse_fen(const char* fen, colour_t* out_turn)
     int rank = 0;
     int file = 0;
     const char* p = fen;
-    while (*p && rank < height)
+    while (*p && rank < height && *p != ' ')
     {
+        printf("rank = '%d'\n", rank);
+        printf("p = '%s'\n", p);
         if (*p == '/')
         {
             rank++;
@@ -104,6 +106,8 @@ board_t* parse_fen(const char* fen, colour_t* out_turn)
     }
     while (*p && *p == ' ')
         p++;
+    printf("*p = %c\n", *p);
+    printf("(int)*p = %d\n", (int)*p);
     if (*p == 'w')
         *out_turn = COLOUR_WHITE;
     else if (*p == 'b')
@@ -112,7 +116,7 @@ board_t* parse_fen(const char* fen, colour_t* out_turn)
 }
 
 
-void generate_fen(const board_t* b, colour_t turn, char* out_fen, int max_len)
+int generate_fen(const board_t* b, colour_t turn, char* out_fen, int max_len)
 {
     int width = b->width;
     int height = b->height;
@@ -148,6 +152,7 @@ void generate_fen(const board_t* b, colour_t turn, char* out_fen, int max_len)
     out_fen[pos++] = ' ';
     out_fen[pos++] = (turn == COLOUR_WHITE) ? 'w' : 'b';
     out_fen[pos] = '\0';
+    return pos;
 }
 
 
