@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "board.h"
 
@@ -22,15 +23,15 @@ void destroy_board(board_t* b)
 }
 
 
-piece_t get_piece(const board_t* b, int index)
+piece_t* get_piece(const board_t* b, int index)
 {
-    return b->squares[index];
+    return &b->squares[index];
 }
 
 
-void set_piece(board_t* b, int index, piece_t p)
+void set_piece(board_t* b, int index, piece_t* p)
 {
-    b->squares[index] = p;
+    memcpy(&b->squares[index], p, sizeof(piece_t));
 }
 
 

@@ -4,6 +4,7 @@
 
 #include "game.h"
 #include "fen.h"
+#include "movegen.h"
 
 
 EMSCRIPTEN_KEEPALIVE
@@ -38,11 +39,49 @@ int get_fen(char* out_fen, int max_len)
 
 
 EMSCRIPTEN_KEEPALIVE
-void get_best_move(char* out_uci, int max_len)
+int get_best_move(char* out_uci, int max_len)
 {
-    move_t m = game_get_best_move();
-    move_to_uci(m, out_uci, max_len);
-    printf("getting best move: %.*s\n", max_len, out_uci);
+    board_t* b = game_get_board();
+    move_t m;
+    if (!game_get_best_move(&m))
+    {
+        printf("failed to get best move\n");
+        return 0;
+    }
+    int len = move_to_uci(b, &m, out_uci, max_len);
+    printf("getting best move: %.*s\n", len, out_uci);
+    return len;
+}
+
+
+EMSCRIPTEN_KEEPALIVE
+int get_movegen_list(char* buffer, unsigned list_len, unsigned row_len)
+{
+    int len = movegen_list(&buffer, list_len, row_len);
+    printf("getting movegen list:");
+    for (unsigned i = 0; i < len; i++)
+    {
+        printf("%s ", &buffer[i * row_len]);
+    }
+    printf("\n");
+    return len;
+}
+
+
+EMSCRIPTEN_KEEPALIVE
+bool set_movegen(const char* name)
+{
+    printf("setting movegen name: %s\n", name);
+    return movegen_set(name);
+}
+
+
+EMSCRIPTEN_KEEPALIVE
+const char* get_movegen_name(void)
+{
+    const char* name = movegen_get();
+    printf("getting movegen name: %s\n", name);
+    return name;
 }
 
 
@@ -60,7 +99,7 @@ bool apply_move_uci(const char* uci)
     printf("move uci: '%s'\n", uci);
     board_t* b = game_get_board();
     move_t m = uci_to_move(b, uci);
-    if (!game_apply_move(m))
+    if (!game_apply_move(&m))
     {
         return false;
     }

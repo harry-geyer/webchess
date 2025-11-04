@@ -4,6 +4,7 @@
 
 #include "game.h"
 #include "rules.h"
+#include "movegen.h"
 
 
 static board_t* current_board = NULL;
@@ -44,25 +45,32 @@ board_t* game_get_board(void)
 }
 
 
-move_t game_get_best_move(void)
+bool game_get_best_move(move_t* m)
 {
-    move_t m;
-    m.from = 0;
-    m.to = 0;
-    m.promotion = PIECE_TYPE_EMPTY;
-    return m;
+    m->from = 0;
+    m->to = 0;
+    m->promotion = PIECE_TYPE_EMPTY;
+    if (current_turn == COLOUR_WHITE)
+    {
+        printf("Generating move for white\n");
+    }
+    else
+    {
+        printf("Generating move for black\n");
+    }
+    return movegen_get_move(&config, current_board, current_turn, m, &current_status);
 }
 
 
-bool game_apply_move(move_t m)
+bool game_apply_move(move_t* m)
 {
-    piece_t p = get_piece(current_board, m.from);
-    if (p.type == PIECE_TYPE_EMPTY)
+    piece_t* p = get_piece(current_board, m->from);
+    if (p->type == PIECE_TYPE_EMPTY)
     {
         printf("couldn't get piece\n");
         return false;
     }
-    if (p.colour != current_turn)
+    if (p->colour != current_turn)
     {
         printf("not right colour's turn\n");
         return false;
@@ -72,8 +80,9 @@ bool game_apply_move(move_t m)
         printf("illegal move\n");
         return false;
     }
-    set_piece(current_board, m.to, p);
-    set_piece(current_board, m.from, (piece_t){ PIECE_TYPE_EMPTY, COLOUR_NONE });
+    set_piece(current_board, m->to, p);
+    piece_t empty = { PIECE_TYPE_EMPTY, COLOUR_NONE };
+    set_piece(current_board, m->from, &empty);
     current_turn = (current_turn == COLOUR_WHITE) ? COLOUR_BLACK : COLOUR_WHITE;
     return true;
 }

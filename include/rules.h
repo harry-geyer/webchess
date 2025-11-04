@@ -6,5 +6,5 @@
 #include "move.h"
 
 
-bool is_move_legal(board_t* board, move_t m);
+bool is_move_legal(board_t* board, move_t* m);
 

@@ -182,20 +182,19 @@ move_t uci_to_move(const board_t* b, const char* uci)
 }
 
 
-void move_to_uci(move_t m, char* out_uci, int max_len)
+int move_to_uci(const board_t* b, move_t* m, char* out_uci, int max_len)
 {
-    int width = 8;
-    int from_file = m.from % width;
-    int from_rank = m.from / width;
-    int to_file = m.to % width;
-    int to_rank = m.to / width;
-    snprintf(out_uci, max_len, "%c%d%c%d",
+    int from_file = m->from % b->width;
+    int from_rank = b->width - m->from / b->width;
+    int to_file = m->to % b->width;
+    int to_rank = m->to / b->width;
+    int len = snprintf(out_uci, max_len, "%c%d%c%d",
         'a' + from_file, from_rank + 1,
         'a' + to_file, to_rank + 1);
-    if (m.promotion != PIECE_TYPE_EMPTY)
+    if (m->promotion != PIECE_TYPE_EMPTY)
     {
         char promo = 'q';
-        switch (m.promotion)
+        switch (m->promotion)
         {
             case PIECE_TYPE_QUEEN:
                 promo = 'q';
@@ -212,9 +211,10 @@ void move_to_uci(move_t m, char* out_uci, int max_len)
             default:
                 break;
         }
-        int len = strlen(out_uci);
+        len = strlen(out_uci);
         if (len < max_len - 1)
             out_uci[len] = promo;
         out_uci[len + 1] = '\0';
     }
+    return len;
 }

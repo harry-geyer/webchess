@@ -235,3 +235,48 @@ button:hover { background-color: #e65b50; }
 
 .move-list div:nth-child(even) { background-color: #2a2a2a; }
 .move-list div.highlight { background-color: #ff6f61; color: #fff; }
+
+.movegen-container {
+    margin-top: 15px;
+    background: #1a1a1a;
+    padding: 10px;
+    border-top: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.movegen-container label {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-bottom: 4px;
+}
+
+.movegen-controls {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+#movegenSelect {
+    flex-grow: 1;
+    padding: 5px;
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    font-size: 0.9rem;
+}
+
+#getMoveBtn {
+    background-color: #ff6f61;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#getMoveBtn:hover {
+    background-color: #e65b50;
+}

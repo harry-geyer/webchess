@@ -11,6 +11,8 @@ import { FEN } from './fen/fen.js';
     const statusEl = document.getElementById('status');
     const resetBtn = document.getElementById('resetBtn');
     const moveListEl = document.getElementById('moveList');
+    const movegenSelect = document.getElementById('movegenSelect');
+    const getMoveBtn = document.getElementById('getMoveBtn');
 
     let moveHistory = [];
     let capturedWhite = [];
@@ -117,6 +119,30 @@ import { FEN } from './fen/fen.js';
     } else {
         wasm.setFEN(defaultFen);
     }
+
+    const movegens = wasm.getMovegenList();
+    movegens.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        movegenSelect.appendChild(opt);
+    });
+
+    if (movegens.length > 0) {
+        wasm.setMovegen(movegens[0]);
+    }
+
+    movegenSelect.addEventListener('change', () => {
+        wasm.setMovegen(movegenSelect.value);
+    });
+
+    getMoveBtn.addEventListener('click', () => {
+        const bestMove = wasm.getBestMove();
+        if (bestMove && wasm.applyMove(bestMove)) {
+            moveHistory.push(bestMove);
+            updateUI();
+        }
+    });
 
     updateUI();
 })();
