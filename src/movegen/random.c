@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "board.h"
 #include "move.h"
@@ -13,6 +14,7 @@ bool movegen_random_generator(game_config_t* config, board_t* board, colour_t tu
     unsigned max_legal_moves = config->height * config->width * 10;
     move_t* legal_moves = malloc(sizeof(move_t) * max_legal_moves);
     int legal_count = 0;
+    srand(time(NULL));
 
     for (int from = 0; from < board->width * board->height; from++)
     {
