@@ -69,6 +69,13 @@ canvas.emscripten {
     gap: 30px;
 }
 
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 480px;
+}
+
 .chess-section { display: flex; flex-direction: column; align-items: center; }
 
 .chess-board-container {
@@ -100,6 +107,7 @@ canvas.emscripten {
     cursor: pointer;
     transition: transform 0.2s, background-color 0.3s;
     user-select: none;
+    position: relative;
 }
 
 .square:hover {
@@ -123,10 +131,9 @@ canvas.emscripten {
     font-size: 44px;
     font-weight: bold;
     user-select: none;
-    text-shadow: 0 0 2px rgba(0,0,0,0.5);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
-/* White pieces (uppercase letters) */
 .square[data-piece^="P"],
 .square[data-piece^="N"],
 .square[data-piece^="B"],
@@ -136,7 +143,6 @@ canvas.emscripten {
     color: #fff;
 }
 
-/* Black pieces (lowercase letters) */
 .square[data-piece^="p"],
 .square[data-piece^="n"],
 .square[data-piece^="b"],
@@ -144,6 +150,39 @@ canvas.emscripten {
 .square[data-piece^="q"],
 .square[data-piece^="k"] {
     color: #000;
+    text-shadow: 1px 1px 2px rgba(255,255,255,0.6);
+}
+
+.square[data-file-letter]::after {
+    content: attr(data-file-letter);
+    position: absolute;
+    bottom: 4px;
+    right: 6px;
+    font-size: 12px;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+}
+
+.square[data-rank-number]::before {
+    content: attr(data-rank-number);
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    font-size: 12px;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+}
+
+.square.white[data-file-letter]::after,
+.square.white[data-rank-number]::before {
+    color: #000;
+}
+
+.square.black[data-file-letter]::after,
+.square.black[data-rank-number]::before {
+    color: #fff;
 }
 
 .info-bar {
@@ -209,20 +248,18 @@ button {
 button:hover { background-color: #e65b50; }
 
 .move-list-container {
-    width: 180px;
-    background: #222;
-    padding: 10px;
-    font-size: 14px;
-    max-height: 520px;
+    flex-grow: 1;
     overflow-y: auto;
-    border: none;
     display: flex;
     flex-direction: column-reverse;
+    justify-content: flex;
+    height: 480px;
 }
 
 .move-list {
     display: flex;
     flex-direction: column;
+    width: 100%;
     gap: 4px;
 }
 
@@ -237,25 +274,33 @@ button:hover { background-color: #e65b50; }
 .move-list div.highlight { background-color: #ff6f61; color: #fff; }
 
 .movegen-container {
-    margin-top: 15px;
-    background: #1a1a1a;
-    padding: 10px;
-    border-top: 1px solid #333;
+    margin-top: 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-}
-
-.movegen-container label {
-    font-size: 0.9rem;
-    color: #ccc;
-    margin-bottom: 4px;
+    gap: 4px;
+    font-size: 14px;
+    color: #fff;
 }
 
 .movegen-controls {
     display: flex;
-    flex-direction: row;
-    gap: 8px;
+    gap: 6px;
+}
+
+.movegen-controls select {
+    flex-grow: 1;
+    padding: 4px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+}
+
+.movegen-controls button {
+    padding: 4px 8px;
+    background-color: #ff6f61;
+    border: none;
+    color: #fff;
+    cursor: pointer;
 }
 
 #movegenSelect {

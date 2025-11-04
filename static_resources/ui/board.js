@@ -17,6 +17,14 @@ export class Board {
                 sq.dataset.rank = r;
                 sq.dataset.file = f;
 
+                if (r === 0) {
+                    sq.dataset.fileLetter = 'abcdefgh'[f];
+                }
+
+                if (f === 0) {
+                    sq.dataset.rankNumber = (r + 1).toString();
+                }
+
                 sq.addEventListener('dragstart', e => this.onDragStart(e));
                 sq.addEventListener('dragover', e => e.preventDefault());
                 sq.addEventListener('drop', e => this.onDrop(e));

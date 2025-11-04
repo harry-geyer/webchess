@@ -187,10 +187,10 @@ int move_to_uci(const board_t* b, move_t* m, char* out_uci, int max_len)
     int from_file = m->from % b->width;
     int from_rank = b->width - m->from / b->width;
     int to_file = m->to % b->width;
-    int to_rank = m->to / b->width;
+    int to_rank = b->width - m->to / b->width;
     int len = snprintf(out_uci, max_len, "%c%d%c%d",
-        'a' + from_file, from_rank + 1,
-        'a' + to_file, to_rank + 1);
+        'a' + from_file, from_rank,
+        'a' + to_file, to_rank);
     if (m->promotion != PIECE_TYPE_EMPTY)
     {
         char promo = 'q';

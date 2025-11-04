@@ -22,7 +22,7 @@ static bool is_pawn_move_legal(board_t* board, move_t* m, colour_t colour)
     }
     if (dx == 0 && dy == 2 * dir && target->type == PIECE_TYPE_EMPTY)
     {
-        int start_rank = (colour == COLOUR_WHITE) ? 1 : 6;
+        int start_rank = (colour == COLOUR_WHITE) ? 1 : board->height - 2;
         if (from_y == start_rank)
         {
             int intermediate_idx = coords_to_index(board, from_x, from_y + dir);
@@ -177,12 +177,11 @@ bool is_king_move_legal(board_t* board, move_t* m)
 
 bool is_move_legal(board_t* board, move_t* m)
 {
-    piece_t* p = &board->squares[m->from];
-    piece_t* target = &board->squares[m->to];
+    piece_t* p = get_piece(board, m->from);
+    piece_t* target = get_piece(board, m->to);
 
     if (m->from == m->to)
     {
-        printf("no move\n");
         return false;
     }
     if (target->colour == p->colour)

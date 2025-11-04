@@ -11,6 +11,8 @@ import { FEN } from './fen/fen.js';
     const statusEl = document.getElementById('status');
     const resetBtn = document.getElementById('resetBtn');
     const moveListEl = document.getElementById('moveList');
+    const moveListContainerEl = moveListEl.parentElement;
+
     const movegenSelect = document.getElementById('movegenSelect');
     const getMoveBtn = document.getElementById('getMoveBtn');
 
@@ -21,7 +23,7 @@ import { FEN } from './fen/fen.js';
 
     const board = new Board(chessboardEl, (uci, piece) => {
         if (wasm.applyMove(uci)) {
-            moveHistory.push(uci + piece);
+            addMove(uci + piece);
             updateUI();
         }
     });
@@ -79,7 +81,16 @@ import { FEN } from './fen/fen.js';
         GameState.save({ fen, moveHistory, capturedWhite, capturedBlack, previousFEN });
         updateTurnIndicator(fen);
         statusEl.textContent = `Status: ${wasm.getStatus()}`;
-        renderMoveList();
+    }
+
+    function makeMoveDiv(i) {
+        const moveNumber = Math.floor(i / 2) + 1;
+        const isWhiteMove = (i % 2) === 0;
+        const d = document.createElement('div');
+        d.textContent = isWhiteMove
+            ? `${moveNumber}. ${moveHistory[i]}`
+            : `... ${moveHistory[i]}`;
+        return d;
     }
 
     function renderMoveList() {
@@ -95,7 +106,21 @@ import { FEN } from './fen/fen.js';
 
             moveListEl.appendChild(moveDiv);
         }
-        moveListEl.scrollTop = 0;
+        moveListEl.parentElement.scrollTop = moveListEl.parentElement.scrollHeight;
+    }
+
+    function addMove(move) {
+        moveHistory.push(move);
+        const i = moveHistory.length - 1;
+        const moveNumber = Math.floor(i / 2) + 1;
+        const isWhiteMove = i % 2 === 0;
+        const moveDiv = document.createElement('div');
+        moveDiv.textContent = isWhiteMove
+            ? `${moveNumber}. ${move}`
+            : `... ${move}`;
+        moveListEl.appendChild(moveDiv);
+        const container = moveListEl.parentElement;
+        container.scrollTop = container.scrollHeight;
     }
 
     resetBtn.addEventListener('click', () => {
@@ -105,6 +130,7 @@ import { FEN } from './fen/fen.js';
         capturedBlack = [];
         previousFEN = defaultFen;
         updateUI();
+        renderMoveList();
     });
 
     board.create();
@@ -139,10 +165,11 @@ import { FEN } from './fen/fen.js';
     getMoveBtn.addEventListener('click', () => {
         const bestMove = wasm.getBestMove();
         if (bestMove && wasm.applyMove(bestMove)) {
-            moveHistory.push(bestMove);
+            addMove(bestMove);
             updateUI();
         }
     });
 
     updateUI();
+    renderMoveList();
 })();

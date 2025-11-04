@@ -50,14 +50,6 @@ bool game_get_best_move(move_t* m)
     m->from = 0;
     m->to = 0;
     m->promotion = PIECE_TYPE_EMPTY;
-    if (current_turn == COLOUR_WHITE)
-    {
-        printf("Generating move for white\n");
-    }
-    else
-    {
-        printf("Generating move for black\n");
-    }
     return movegen_get_move(&config, current_board, current_turn, m, &current_status);
 }
 
