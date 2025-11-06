@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "game.h"
 #include "rules.h"
@@ -26,16 +27,31 @@ void game_init(const game_config_t* cfg)
 }
 
 
+static void realise_game_status(void)
+{
+    bool in_check = is_in_check(current_board, current_turn);
+    bool can_move = has_legal_moves(current_board, current_turn);
+    game_status_t status = STATUS_ONGOING;
+    if (in_check)
+    {
+        status = can_move ? STATUS_CHECK : STATUS_CHECKMATE;
+    }
+    else if (!can_move)
+    {
+        status = STATUS_STALEMATE;
+    }
+    current_status = status;
+}
+
+
 void game_set_board(const board_t* b, colour_t turn)
 {
     if (!current_board)
         return;
-    int size = b->width * b->height;
-    for (int i = 0; i < size; i++)
-    {
-        current_board->squares[i] = b->squares[i];
-    }
+    memcpy(current_board->squares, b->squares, b->width * b->height * sizeof(piece_t));
+
     current_turn = turn;
+    realise_game_status();
 }
 
 
@@ -62,6 +78,12 @@ bool game_apply_move(move_t* m)
         printf("couldn't get piece\n");
         return false;
     }
+    if (STATUS_CHECKMATE == current_status
+        || STATUS_STALEMATE == current_status)
+    {
+        printf("end of game\n");
+        return false;
+    }
     if (p->colour != current_turn)
     {
         printf("not right colour's turn\n");
@@ -72,10 +94,18 @@ bool game_apply_move(move_t* m)
         printf("illegal move\n");
         return false;
     }
+    if (STATUS_CHECK == current_status
+        && !would_move_release_check(current_board, m))
+    {
+        printf("need to release check\n");
+        return false;
+    }
     set_piece(current_board, m->to, p);
     piece_t empty = { PIECE_TYPE_EMPTY, COLOUR_NONE };
     set_piece(current_board, m->from, &empty);
+
     current_turn = (current_turn == COLOUR_WHITE) ? COLOUR_BLACK : COLOUR_WHITE;
+    realise_game_status();
     return true;
 }
 

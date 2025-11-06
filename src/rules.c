@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "board.h"
 #include "move.h"
@@ -40,7 +41,7 @@ static bool is_pawn_move_legal(board_t* board, move_t* m, colour_t colour)
 }
 
 
-bool is_bishop_move_legal(board_t* board, move_t* m)
+static bool is_bishop_move_legal(board_t* board, move_t* m)
 {
     int from_x = index_to_x(board, m->from);
     int from_y = index_to_y(board, m->from);
@@ -76,7 +77,7 @@ bool is_bishop_move_legal(board_t* board, move_t* m)
 }
 
 
-bool is_rook_move_legal(board_t* board, move_t* m)
+static bool is_rook_move_legal(board_t* board, move_t* m)
 {
     int from_x = index_to_x(board, m->from);
     int from_y = index_to_y(board, m->from);
@@ -123,13 +124,13 @@ static bool is_knight_move_legal(board_t* board, move_t* m)
 }
 
 
-bool is_queen_move_legal(board_t* board, move_t* m)
+static bool is_queen_move_legal(board_t* board, move_t* m)
 {
     return is_rook_move_legal(board, m) || is_bishop_move_legal(board, m);
 }
 
 
-bool is_king_move_legal(board_t* board, move_t* m)
+static bool is_king_move_legal(board_t* board, move_t* m)
 {
     int from_x = index_to_x(board, m->from);
     int from_y = index_to_y(board, m->from);
@@ -209,3 +210,115 @@ bool is_move_legal(board_t* board, move_t* m)
     return false;
 }
 
+
+static bool is_square_attacked(board_t* board, int sq_index, colour_t by_colour)
+{
+    for (int i = 0; i < board->width * board->height; i++)
+    {
+        piece_t* p = &board->squares[i];
+        if (p->type == PIECE_TYPE_EMPTY || p->colour != by_colour)
+            continue;
+
+        move_t m = { .from = i, .to = sq_index, .promotion = PIECE_TYPE_EMPTY };
+        if (is_move_legal(board, &m))
+            return true;
+    }
+    return false;
+}
+
+
+static int find_king(board_t* board, colour_t colour)
+{
+    for (int i = 0; i < board->width * board->height; i++)
+    {
+        piece_t* p = &board->squares[i];
+        if (p->type == PIECE_TYPE_KING && p->colour == colour)
+            return i;
+    }
+    return -1;
+}
+
+
+bool is_in_check(board_t* board, colour_t colour)
+{
+    int king_sq = find_king(board, colour);
+    if (king_sq < 0)
+        return false;
+    return is_square_attacked(board, king_sq, (colour == COLOUR_WHITE) ? COLOUR_BLACK : COLOUR_WHITE);
+}
+
+
+bool generate_all_moves(board_t* board, colour_t colour, move_t* moves, int max_moves, int* move_count)
+{
+    int count = 0;
+    for (int i = 0; i < board->width * board->height; i++)
+    {
+        piece_t* p = &board->squares[i];
+        if (p->type == PIECE_TYPE_EMPTY || p->colour != colour)
+            continue;
+
+        for (int j = 0; j < board->width * board->height; j++)
+        {
+            move_t m =
+            {
+                .from = i,
+                .to = j,
+                .promotion = PIECE_TYPE_EMPTY,
+            };
+            if (is_move_legal(board, &m))
+            {
+                if (count < max_moves)
+                    memcpy(&moves[count++], &m, sizeof(move_t));
+            }
+        }
+    }
+    *move_count = count;
+    return count > 0;
+}
+
+
+bool would_move_release_check(board_t* board, move_t* m)
+{
+    board_t temp;
+    temp.width = board->width;
+    temp.height = board->height;
+    temp.squares = malloc(sizeof(piece_t) * temp.width * temp.height);
+    memcpy(temp.squares, board->squares, sizeof(piece_t) * temp.width * temp.height);
+
+    temp.squares[m->to] = temp.squares[m->from];
+    temp.squares[m->from].type = PIECE_TYPE_EMPTY;
+    temp.squares[m->from].colour = COLOUR_NONE;
+
+    colour_t colour = temp.squares[m->to].colour;
+    bool in_check = is_in_check(&temp, colour);
+
+    free(temp.squares);
+    return !in_check;
+}
+
+
+static bool would_move_cause_check(board_t* board, move_t* m)
+{
+    return !would_move_release_check(board, m);
+}
+
+
+bool has_legal_moves(board_t* board, colour_t colour)
+{
+    for (int from = 0; from < board->width * board->height; from++)
+    {
+        piece_t* p = &board->squares[from];
+        if (p->type == PIECE_TYPE_EMPTY || p->colour != colour)
+            continue;
+        for (int to = 0; to < board->width * board->height; to++)
+        {
+            move_t m = { .from = from, .to = to, .promotion = PIECE_TYPE_EMPTY };
+            if (!is_move_legal(board, &m))
+                continue;
+
+            if (COLOUR_NONE == would_move_cause_check(board, &m))
+                return true;
+        }
+    }
+    return false;
+}
