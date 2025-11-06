@@ -2,13 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <stdio.h>
 
 #include "board.h"
 #include "move.h"
 #include "game.h"
 #include "rules.h"
-#include "fen.h"
 
 
 static bool tile_is_white(unsigned index, unsigned width)
@@ -32,12 +30,6 @@ static double gen_move_value(board_t* board, colour_t turn, move_t* move)
     {
         value = (2 * !from_white - 1) + (2 * !!to_white - 1);
     }
-    char uci[32];
-    unsigned len = move_to_uci(board, move, uci, 31);
-    uci[31] = '\0';
-    printf("turn: %s move: %.*s value: %lf\n",
-        COLOUR_WHITE == turn ? "WHITE" : "BLACK",
-        len, uci, value);
     return value;
 }
 
@@ -79,17 +71,12 @@ static move_t* select_move(board_t* board, colour_t turn, move_t* moves, unsigne
     }
 
     /* from same weighted moves, select randomly */
-    printf("selected value = %lf\n", fav_move_value);
-    printf("num_fav_moves = %u\n", num_fav_moves);
-    printf("num_moves = %u\n", num_moves);
     unsigned index_index = 0;
     if (num_fav_moves > 1)
     {
         index_index = rand() % num_fav_moves;
     }
-    printf("index_index = %u\n", index_index);
     unsigned index = fav_moves_index[index_index];
-    printf("index = %u\n", index);
     move_t* move = &moves[index];
     free(fav_moves_index);
 
@@ -99,7 +86,6 @@ static move_t* select_move(board_t* board, colour_t turn, move_t* moves, unsigne
 
 bool movegen_fav_colour_generator(game_config_t* config, board_t* board, colour_t turn, move_t* move, game_status_t status)
 {
-    printf("Choosing with colour :)\n");
     unsigned max_legal_moves = config->height * config->width * 10;
     move_t* legal_moves = malloc(sizeof(move_t) * max_legal_moves);
     int legal_count = 0;
