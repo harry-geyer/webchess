@@ -57,7 +57,13 @@ int get_best_move(char* out_uci, int max_len)
 EMSCRIPTEN_KEEPALIVE
 int get_movegen_list(char* buffer, unsigned list_len, unsigned row_len)
 {
-    int len = movegen_list(&buffer, list_len, row_len);
+    char** buf_list = malloc(sizeof(char*) * list_len);
+    for (unsigned i = 0; i < list_len; i++)
+    {
+        buf_list[i] = buffer + row_len * i;
+    }
+    int len = movegen_list(buf_list, list_len, row_len);
+    free(buf_list);
     printf("getting movegen list:");
     for (unsigned i = 0; i < len; i++)
     {

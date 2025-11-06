@@ -1,7 +1,7 @@
 export const GameState = {
-    save({ fen, moveHistory, capturedWhite, capturedBlack, previousFEN }) {
+    save({ fen, moveHistory, capturedWhite, capturedBlack, previousFEN, moveGen }) {
         localStorage.setItem('chessGameState', JSON.stringify({
-            fen, moveHistory, capturedWhite, capturedBlack, previousFEN, timestamp: Date.now()
+            fen, moveHistory, capturedWhite, capturedBlack, previousFEN, moveGen, timestamp: Date.now()
         }));
     },
     load() {

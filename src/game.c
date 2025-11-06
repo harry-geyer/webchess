@@ -66,7 +66,7 @@ bool game_get_best_move(move_t* m)
     m->from = 0;
     m->to = 0;
     m->promotion = PIECE_TYPE_EMPTY;
-    return movegen_get_move(&config, current_board, current_turn, m, &current_status);
+    return movegen_get_move(&config, current_board, current_turn, m, current_status);
 }
 
 

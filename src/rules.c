@@ -248,35 +248,6 @@ bool is_in_check(board_t* board, colour_t colour)
 }
 
 
-bool generate_all_moves(board_t* board, colour_t colour, move_t* moves, int max_moves, int* move_count)
-{
-    int count = 0;
-    for (int i = 0; i < board->width * board->height; i++)
-    {
-        piece_t* p = &board->squares[i];
-        if (p->type == PIECE_TYPE_EMPTY || p->colour != colour)
-            continue;
-
-        for (int j = 0; j < board->width * board->height; j++)
-        {
-            move_t m =
-            {
-                .from = i,
-                .to = j,
-                .promotion = PIECE_TYPE_EMPTY,
-            };
-            if (is_move_legal(board, &m))
-            {
-                if (count < max_moves)
-                    memcpy(&moves[count++], &m, sizeof(move_t));
-            }
-        }
-    }
-    *move_count = count;
-    return count > 0;
-}
-
-
 bool would_move_release_check(board_t* board, move_t* m)
 {
     board_t temp;
@@ -294,6 +265,42 @@ bool would_move_release_check(board_t* board, move_t* m)
 
     free(temp.squares);
     return !in_check;
+}
+
+
+bool generate_all_moves(board_t* board, colour_t colour, bool in_check, move_t* moves, int max_moves, int* move_count)
+{
+    int count = 0;
+    for (int i = 0; i < board->width * board->height; i++)
+    {
+        piece_t* p = &board->squares[i];
+        if (p->type == PIECE_TYPE_EMPTY || p->colour != colour)
+            continue;
+
+        for (int j = 0; j < board->width * board->height; j++)
+        {
+            move_t m =
+            {
+                .from = i,
+                .to = j,
+                .promotion = PIECE_TYPE_EMPTY,
+            };
+            if (is_move_legal(board, &m)
+                && (!in_check || would_move_release_check(board, &m)))
+            {
+                if (count < max_moves)
+                {
+                    memcpy(&moves[count++], &m, sizeof(move_t));
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+    }
+    *move_count = count;
+    return count > 0;
 }
 
 

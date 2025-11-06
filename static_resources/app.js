@@ -20,6 +20,7 @@ import { FEN } from './fen/fen.js';
     let capturedWhite = [];
     let capturedBlack = [];
     let previousFEN = defaultFen;
+    let moveGen = '';
 
     const board = new Board(chessboardEl, (uci, piece) => {
         if (wasm.applyMove(uci)) {
@@ -78,7 +79,7 @@ import { FEN } from './fen/fen.js';
         const fen = wasm.getFEN();
         board.render(fen);
         updateCapturedPieces(fen);
-        GameState.save({ fen, moveHistory, capturedWhite, capturedBlack, previousFEN });
+        GameState.save({ fen, moveHistory, capturedWhite, capturedBlack, previousFEN, moveGen });
         updateTurnIndicator(fen);
         statusEl.textContent = `Status: ${wasm.getStatus()}`;
     }
@@ -135,17 +136,6 @@ import { FEN } from './fen/fen.js';
 
     board.create();
 
-    const saved = GameState.load();
-    if (saved) {
-        wasm.setFEN(saved.fen);
-        moveHistory = saved.moveHistory;
-        capturedWhite = saved.capturedWhite;
-        capturedBlack = saved.capturedBlack;
-        previousFEN = saved.previousFEN;
-    } else {
-        wasm.setFEN(defaultFen);
-    }
-
     const movegens = wasm.getMovegenList();
     movegens.forEach(name => {
         const opt = document.createElement('option');
@@ -154,12 +144,36 @@ import { FEN } from './fen/fen.js';
         movegenSelect.appendChild(opt);
     });
 
-    if (movegens.length > 0) {
-        wasm.setMovegen(movegens[0]);
+    const saved = GameState.load();
+    if (saved) {
+        wasm.setFEN(saved.fen);
+        moveHistory = saved.moveHistory;
+        capturedWhite = saved.capturedWhite;
+        capturedBlack = saved.capturedBlack;
+        previousFEN = saved.previousFEN;
+        moveGen = saved.moveGen;
+        if (movegens.includes(moveGen)) {
+            wasm.setMovegen(moveGen);
+            movegenSelect.value = moveGen;
+        } else {
+            if (movegens.length > 0) {
+                moveGen = movegens[0];
+                wasm.setMovegen(moveGen);
+                movegenSelect.value = moveGen;
+            }
+        }
+    } else {
+        wasm.setFEN(defaultFen);
+        if (movegens.length > 0) {
+            moveGen = movegens[0];
+            wasm.setMovegen(moveGen);
+            movegenSelect.value = moveGen;
+        }
     }
 
     movegenSelect.addEventListener('change', () => {
-        wasm.setMovegen(movegenSelect.value);
+        moveGen = movegenSelect.value;
+        wasm.setMovegen(moveGen);
     });
 
     getMoveBtn.addEventListener('click', () => {

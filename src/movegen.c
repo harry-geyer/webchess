@@ -7,6 +7,7 @@
 #include "game.h"
 
 #include "movegen/random.h"
+#include "movegen/fav_colour.h"
 
 
 #define MOVEGEN(_name)          { # _name , movegen_ ## _name ## _generator }
@@ -15,11 +16,12 @@
 static const movegen_t move_generators[] =
 {
     MOVEGEN(random),
+    MOVEGEN(fav_colour),
 };
 static const movegen_t* move_generator = &move_generators[0];
 
 
-bool movegen_get_move(game_config_t* config, board_t* board, colour_t turn, move_t* move, game_status_t* status)
+bool movegen_get_move(game_config_t* config, board_t* board, colour_t turn, move_t* move, game_status_t status)
 {
     return move_generator->generator(config, board, turn, move, status);
 }
