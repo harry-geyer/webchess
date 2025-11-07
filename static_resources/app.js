@@ -1,7 +1,7 @@
 import { WasmBridge } from './wasm/wasm_bridge.js';
-import { Board } from './ui/board.js';
+import { Board, getPieceChar } from './ui/board.js';
 import { GameState } from './state/game_state.js';
-import { defaultFen, pieceUnicode } from './utils/constants.js';
+import { defaultFen } from './utils/constants.js';
 import { FEN } from './fen/fen.js';
 
 (async function initApp() {
@@ -61,10 +61,10 @@ import { FEN } from './fen/fen.js';
         previousFEN = fen;
 
         document.getElementById('takenWhite').textContent =
-            capturedWhite.map(c => pieceUnicode[c] || '').join(' ') || '-';
+            capturedWhite.map(c => getPieceChar(c)).join('') || '-';
 
         document.getElementById('takenBlack').textContent =
-            capturedBlack.map(c => pieceUnicode[c] || '').join(' ') || '-';
+            capturedBlack.map(c => getPieceChar(c)).join('') || '-';
     }
 
     function updateTurnIndicator(fen) {

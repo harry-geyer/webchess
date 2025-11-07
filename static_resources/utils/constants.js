@@ -1,7 +1,31 @@
-// These were different, I decided I prefer them both filled in
-export const pieceUnicode = {
-    'P': '♟', 'N': '♞', 'B': '♝', 'R': '♜', 'Q': '♛', 'K': '♚',
-    'p': '♟', 'n': '♞', 'b': '♝', 'r': '♜', 'q': '♛', 'k': '♚'
+//export const pieceGlyphs = {
+//    'P': 'p',
+//    'N': 'n',
+//    'B': 'b',
+//    'R': 'r',
+//    'Q': 'q',
+//    'K': 'k',
+//    'p': 'o',
+//    'n': 'm',
+//    'b': 'v',
+//    'r': 't',
+//    'q': 'w',
+//    'k': 'l'
+//};
+
+export const pieceGlyphs = {
+    'P': 'o',
+    'N': 'm',
+    'B': 'v',
+    'R': 't',
+    'Q': 'w',
+    'K': 'l',
+    'p': 'o',
+    'n': 'm',
+    'b': 'v',
+    'r': 't',
+    'q': 'w',
+    'k': 'l'
 };
 
 export const files = ['a','b','c','d','e','f','g','h'];

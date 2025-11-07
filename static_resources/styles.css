@@ -1,3 +1,10 @@
+@font-face {
+    font-family: "Merida";
+    src: url("fonts/merida.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
 body {
     margin: 0;
     font-family: 'Arial', sans-serif;
@@ -94,6 +101,16 @@ canvas.emscripten {
     margin-bottom: 0;
     overflow: hidden;
     background-color: #222;
+}
+
+.piece {
+    font-family: "Merida", serif;
+    font-size: 40px; /* Adjust to fit your squares */
+    text-align: center;
+    line-height: 1;
+    cursor: grab;
+    user-select: none;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.7); /* dark shadow as you wanted */
 }
 
 .square {
@@ -220,6 +237,7 @@ canvas.emscripten {
     display: flex;
     flex-wrap: wrap;
     color: #fff;
+    font-family: Merida;
 }
 
 #takenBlack {
@@ -227,6 +245,7 @@ canvas.emscripten {
     display: flex;
     flex-wrap: wrap;
     color: #000;
+    font-family: Merida;
 }
 
 #turnIndicator {

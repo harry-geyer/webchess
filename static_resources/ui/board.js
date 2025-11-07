@@ -1,5 +1,9 @@
-import { pieceUnicode, files } from '../utils/constants.js';
+import { pieceGlyphs, files } from '../utils/constants.js';
 import { FEN } from '../fen/fen.js';
+
+export function getPieceChar(pieceSymbol) {
+    return pieceGlyphs[pieceSymbol] || '';
+}
 
 export class Board {
     constructor(el, onMove) {
@@ -48,8 +52,16 @@ export class Board {
 
         for (const rank of ranks) {
             for (const char of rank) {
+
                 if (isNaN(char)) {
-                    squares[idx].textContent = pieceUnicode[char] || '';
+                    const glyph = getPieceChar(char);
+                    squares[idx].innerHTML = '';
+                    const pieceEl = document.createElement('div');
+                    pieceEl.classList.add('piece');
+                    pieceEl.textContent = glyph;
+                    pieceEl.dataset.piece = char;
+                    squares[idx].appendChild(pieceEl);
+
                     squares[idx].dataset.piece = char;
                     squares[idx].draggable = true;
                     idx++;
@@ -68,15 +80,17 @@ export class Board {
         e.dataTransfer.setData('text/plain', '');
 
         const ghost = document.createElement('div');
-        ghost.textContent = pieceUnicode[piece];
+        ghost.textContent = getPieceChar(piece);
         ghost.style.fontSize = '44px';
-        ghost.style.fontFamily = 'Arial, sans-serif';
-        ghost.style.color = piece === piece.toUpperCase() ? '#fff' : '#000'; // optional, contrast
+        ghost.style.fontFamily = '"Merida", Arial, sans-serif';
+        ghost.style.color = piece === piece.toUpperCase() ? '#fff' : '#000';
         ghost.style.position = 'absolute';
-        ghost.style.top = '-1000px';   // hide offscreen
+        ghost.style.top = '-1000px';
         ghost.style.left = '-1000px';
         ghost.style.background = 'transparent';
         ghost.style.pointerEvents = 'none';
+        ghost.style.lineHeight = '1';
+        ghost.style.padding = '0';
 
         document.body.appendChild(ghost);
         e.dataTransfer.setDragImage(ghost, 22, 22);

@@ -24,11 +24,11 @@ static double gen_move_value(board_t* board, colour_t turn, move_t* move)
     bool to_white = tile_is_white(move->to, board->width);
     if (COLOUR_WHITE == turn)
     {
-        value = (2 * !!from_white - 1) + (2 * !to_white - 1);
+        value = (3 * !!from_white - 1) + (2 * !to_white - 1);
     }
     else if (COLOUR_BLACK == turn)
     {
-        value = (2 * !from_white - 1) + (2 * !!to_white - 1);
+        value = (3 * !from_white - 1) + (2 * !!to_white - 1);
     }
     return value;
 }
