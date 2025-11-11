@@ -66,7 +66,11 @@ $(LIB): $(LIB_OBJS)
 	@mkdir -p $(@D)
 	$(CC) -shared -o $@ $(CFLAGS) $^ -lgcov
 
-$(TEST_BUILD_DIR)/coverage.info: test
+$(TEST_BUILD_DIR)/.test_complete: $(LIB) $(TESTS)
+	pytest --rootdir=$(TEST_BUILD_DIR) -v $(TEST_DIR)
+	@touch $@
+
+$(TEST_BUILD_DIR)/coverage.info: $(TEST_BUILD_DIR)/.test_complete
 	@mkdir -p $(@D)
 	lcov --capture --directory $(TEST_BUILD_DIR)/objs --output-file $@
 
