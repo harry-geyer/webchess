@@ -1,6 +1,6 @@
 import pytest
 
-from util import STATUS, check_status, default_fen
+from util import STATUS, check_status, default_fen, fools_mate_fen, scholars_mate_fen
 
 
 ongoing_fens = [
@@ -20,8 +20,8 @@ stalemate_fens = [
 checkmate_fens = [
         "4k3/8/8/8/8/1q6/2n5/K7 w",
         "7k/5N2/6Q1/8/8/8/8/4K3 b",
-        "rnb1kbnr/pppp1ppp/4p3/8/6Pq/5P2/PPPPP2P/RNBQKBNR w",  # fool's mate
-        "r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b"  # scholar's mate
+        fools_mate_fen,
+        scholars_mate_fen,
     ]
 
 

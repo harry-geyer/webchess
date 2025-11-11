@@ -43,7 +43,8 @@ clean:
 serve: default
 	python3 -m http.server -d $(WEBROOT)
 
-test: $(TEST_BUILD_DIR)/.test_complete
+test: $(LIB) $(TESTS)
+	pytest --rootdir=$(TEST_BUILD_DIR) -v $(TEST_DIR)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
@@ -65,12 +66,7 @@ $(LIB): $(LIB_OBJS)
 	@mkdir -p $(@D)
 	$(CC) -shared -o $@ $(CFLAGS) $^ -lgcov
 
-$(TEST_BUILD_DIR)/.test_complete: $(LIB) $(TESTS)
-	@mkdir -p $(@D)
-	pytest --rootdir=$(TEST_BUILD_DIR) -v tests/
-	@touch $@
-
-$(TEST_BUILD_DIR)/coverage.info: $(TEST_BUILD_DIR)/.test_complete
+$(TEST_BUILD_DIR)/coverage.info: test
 	@mkdir -p $(@D)
 	lcov --capture --directory $(TEST_BUILD_DIR)/objs --output-file $@
 
