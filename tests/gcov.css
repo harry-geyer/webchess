@@ -1,0 +1,132 @@
+:root {
+  --textColor: aliceblue;
+  --mainBg: #131313;
+  --linkColor: aquamarine;
+
+  --lighter: #ffffff05;
+}
+
+a,
+a:visited {
+  color: var(--linkColor);
+  text-decoration: none;
+}
+
+body center table tbody tr:nth-child(even):not(:nth-child(2)) {
+  background-color: var(--lighter);
+}
+
+body {
+  font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
+    sans-serif;
+  letter-spacing: 0.03em;
+  background-color: var(--mainBg);
+  color: var(--textColor);
+}
+
+center table {
+  background-color: var(--lighter);
+  border-radius: 1em;
+  padding: 1em;
+  padding-top: 0;
+}
+
+td,
+th {
+  padding: 0.5em;
+}
+
+td.coverBar > table {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+/*code-related style is below this line*/
+
+td.lineCov,
+span.lineCov {
+  background-color: rgb(0, 30, 30);
+}
+td.lineNoCov,
+span.lineNoCov {
+  background-color: rgb(50, 0, 0);
+}
+
+.source > a {
+  color: var(--textColor);
+  font-family: "Courier New", Courier, monospace;
+}
+
+.source {
+  font-size: 1.1em;
+}
+
+
+td.ruler {
+  /* background-color: #6688d4; */
+  background-color: #1c2028;
+}
+
+td.coverDirectory {
+  /* color: #284fa8; */
+  /* background-color: #b8d0ff; */
+  color: #cc7c7c;
+  background-color: #4a505b;
+}
+
+a:link {
+  /* color: #284fa8; */
+  color: #cc7c7c;
+}
+
+td.tableHead {
+  /* background-color: #6688d4; */
+  background-color: #1c2028;
+}
+
+td.coverNumDflt {
+  /* background-color: #dae7fe; */
+  background-color: #4a505b;
+}
+
+td.coverPerHi {
+  color: black;
+}
+
+td.coverPerMed {
+  color: black;
+}
+
+td.coverPerLo {
+  color: black;
+}
+
+td.coverBar {
+  /* background-color: #dae7fe; */
+  background-color: #4a505b;
+}
+
+td.headerCovTableEntry {
+  /* background-color: #dae7fe; */
+  background-color: #4a505b;
+  color: #fff;
+}
+
+td.coverFile {
+  background-color: #4a505b;
+}
+
+span.tlaGNC {
+  /* background-color: #CAD7FE; */
+  background-color: #343844;
+}
+
+span.tlaUNC {
+  /* background-color: #FF6230; */
+  background-color: #79270D;
+}
+
+span.lineNum {
+  background-color: #3e3a20;
+}
