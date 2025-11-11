@@ -35,7 +35,7 @@ TESTS:=$(shell find $(TEST_DIR) -type f -name "*.py")
 
 default: all
 
-all: $(WASM) $(ASSETS)
+all: $(WASM) $(ASSETS) $(TEST_BUILD_DIR)/.coverage_complete
 
 clean:
 	rm -rf $(BUILD_DIR)
@@ -43,20 +43,7 @@ clean:
 serve: default
 	python3 -m http.server -d $(WEBROOT)
 
-test: $(TEST_BUILD_DIR)/coverage/.complete
-
-$(TEST_BUILD_DIR)/coverage/coverage.info: $(LIB) $(TESTS)
-	@mkdir -p $(@D)
-	pytest --rootdir=$(TEST_BUILD_DIR) -v tests/
-	lcov --capture --directory $(TEST_BUILD_DIR) --output-file $@
-
-$(TEST_BUILD_DIR)/coverage/gcov.css: $(TEST_BUILD_DIR)/coverage/coverage.info $(TEST_DIR)/gcov.css
-	@mkdir -p $(@D)
-	genhtml $(TEST_BUILD_DIR)/coverage/coverage.info --output-directory $(TEST_BUILD_DIR)/coverage/
-
-$(TEST_BUILD_DIR)/coverage/.complete: $(TEST_BUILD_DIR)/coverage/gcov.css $(TEST_DIR)/gcov.css
-	cat $(TEST_DIR)/gcov.css >> $(TEST_BUILD_DIR)/coverage/gcov.css
-	touch $@
+test: $(TEST_BUILD_DIR)/.test_complete
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
@@ -77,5 +64,22 @@ $(TEST_BUILD_DIR)/objs/%.o: $(SRC_DIR)/%.c
 $(LIB): $(LIB_OBJS)
 	@mkdir -p $(@D)
 	$(CC) -shared -o $@ $(CFLAGS) $^ -lgcov
+
+$(TEST_BUILD_DIR)/.test_complete: $(LIB) $(TESTS)
+	@mkdir -p $(@D)
+	pytest --rootdir=$(TEST_BUILD_DIR) -v tests/
+	@touch $@
+
+$(TEST_BUILD_DIR)/coverage.info: $(TEST_BUILD_DIR)/.test_complete
+	@mkdir -p $(@D)
+	lcov --capture --directory $(TEST_BUILD_DIR)/objs --output-file $@
+
+$(WEBROOT)/coverage/gcov.css: $(TEST_BUILD_DIR)/coverage.info $(TEST_DIR)/gcov.css
+	@mkdir -p $(@D)
+	genhtml $(TEST_BUILD_DIR)/coverage.info --output-directory $(WEBROOT)/coverage/
+
+$(TEST_BUILD_DIR)/.coverage_complete: $(WEBROOT)/coverage/gcov.css $(TEST_DIR)/gcov.css
+	cat $(TEST_DIR)/gcov.css >> $(WEBROOT)/coverage/gcov.css
+	@touch $@
 
 .PHONY: all clean serve test
