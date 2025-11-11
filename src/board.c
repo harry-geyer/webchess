@@ -23,6 +23,18 @@ void destroy_board(board_t* b)
 }
 
 
+board_t* copy_board(board_t* b)
+{
+    board_t* board = malloc(sizeof(board_t));
+    board->height = b->height;
+    board->width = b->width;
+    unsigned mem_squares_size = sizeof(piece_t) * board->height * board->width;
+    board->squares = malloc(mem_squares_size);
+    memcpy(board->squares, b->squares, mem_squares_size);
+    return board;
+}
+
+
 piece_t* get_piece(const board_t* b, int index)
 {
     return &b->squares[index];

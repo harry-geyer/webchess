@@ -35,6 +35,7 @@ typedef struct
 
 board_t* create_board(int width, int height);
 void destroy_board(board_t* b);
+board_t* copy_board(board_t* b);
 piece_t* get_piece(const board_t* b, int index);
 void set_piece(board_t* b, int index, piece_t* p);
 void clear_board(board_t* b);

@@ -7,6 +7,7 @@
 #include "move.h"
 #include "game.h"
 #include "rules.h"
+#include "fen.h"
 
 
 static bool tile_is_white(unsigned index, unsigned width)
@@ -17,10 +18,63 @@ static bool tile_is_white(unsigned index, unsigned width)
 }
 
 
+static unsigned can_be_taken(board_t* board, colour_t turn, unsigned index)
+{
+    /* will return number of pieces that can take it */
+    unsigned count = 0;
+    for (unsigned i = 0; i < board->width * board->height; i++)
+    {
+        if (i == index)
+            continue;
+        piece_t* p = get_piece(board, i);
+        if (turn == p->colour)
+            continue;
+        move_t m =
+        {
+            .from = i,
+            .to = index,
+            .promotion = PIECE_TYPE_EMPTY,
+        };
+        if (is_move_legal(board, &m))
+            count++;
+    }
+    return count;
+}
+
+
+static unsigned can_move_be_taken(board_t* board, colour_t turn, move_t* move)
+{
+    board_t* temp = copy_board(board);
+
+    /* assume given move IS legal */
+
+    piece_t* p = get_piece(temp, move->from);
+    set_piece(temp, move->to, p);
+    piece_t empty = { PIECE_TYPE_EMPTY, COLOUR_NONE };
+    set_piece(temp, move->from, &empty);
+
+    int count = can_be_taken(temp, turn, move->to);
+
+    destroy_board(temp);
+    return count;
+}
+
+
 static double gen_move_value(board_t* board, colour_t turn, move_t* move)
 {
     double value = 0.;
+    piece_t* p = get_piece(board, move->from);
+
     bool from_white = tile_is_white(move->from, board->width);
+
+    if (PIECE_TYPE_BISHOP == p->type
+        && (COLOUR_WHITE == turn) == from_white)
+    {
+        /* is a bishop on the wrong colour square */
+        value = 10000. * (double)can_move_be_taken(board, turn, move);
+        return value;
+    }
+
     bool to_white = tile_is_white(move->to, board->width);
     if (COLOUR_WHITE == turn)
     {
@@ -86,7 +140,7 @@ static move_t* select_move(board_t* board, colour_t turn, move_t* moves, unsigne
 
 bool movegen_fav_colour_generator(game_config_t* config, board_t* board, colour_t turn, move_t* move, game_status_t status)
 {
-    unsigned max_legal_moves = config->height * config->width * 10;
+    unsigned max_legal_moves = config->height * config->width * 32;
     move_t* legal_moves = malloc(sizeof(move_t) * max_legal_moves);
     int legal_count = 0;
     if (!generate_all_moves(board, turn, STATUS_CHECK == status, legal_moves, max_legal_moves, &legal_count))

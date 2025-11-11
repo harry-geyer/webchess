@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
+#ifdef __TO_WEBASM__
 #include <emscripten.h>
+#else
+#define EMSCRIPTEN_KEEPALIVE
+#endif
 
 #include "game.h"
 #include "fen.h"

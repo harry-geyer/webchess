@@ -1,6 +1,5 @@
 #include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "board.h"
@@ -206,7 +205,6 @@ bool is_move_legal(board_t* board, move_t* m)
         default:
             break;
     }
-    printf("invalid piece type\n");
     return false;
 }
 
@@ -250,20 +248,17 @@ bool is_in_check(board_t* board, colour_t colour)
 
 bool would_move_release_check(board_t* board, move_t* m)
 {
-    board_t temp;
-    temp.width = board->width;
-    temp.height = board->height;
-    temp.squares = malloc(sizeof(piece_t) * temp.width * temp.height);
-    memcpy(temp.squares, board->squares, sizeof(piece_t) * temp.width * temp.height);
+    board_t* temp = copy_board(board);
 
-    temp.squares[m->to] = temp.squares[m->from];
-    temp.squares[m->from].type = PIECE_TYPE_EMPTY;
-    temp.squares[m->from].colour = COLOUR_NONE;
+    piece_t* p = get_piece(board, m->from);
+    set_piece(temp, m->to, p);
+    piece_t empty = { PIECE_TYPE_EMPTY, COLOUR_NONE };
+    set_piece(temp, m->from, &empty);
 
-    colour_t colour = temp.squares[m->to].colour;
-    bool in_check = is_in_check(&temp, colour);
+    colour_t colour = temp->squares[m->to].colour;
+    bool in_check = is_in_check(temp, colour);
 
-    free(temp.squares);
+    destroy_board(temp);
     return !in_check;
 }
 
