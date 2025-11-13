@@ -113,6 +113,12 @@ canvas.emscripten {
     text-shadow: 2px 2px 6px rgba(0,0,0,0.7); /* dark shadow as you wanted */
 }
 
+.piece.deny-pick {
+    transform: translateY(-4px);
+    transition: transform 120ms ease;
+    filter: brightness(0.85);
+}
+
 .square {
     width: 60px;
     height: 60px;

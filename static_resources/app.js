@@ -27,7 +27,7 @@ import { FEN } from './fen/fen.js';
             addMove(uci + piece);
             updateUI();
         }
-    });
+    }, () => FEN.getActiveColour(previousFEN));
 
     function updateCapturedPieces(fen) {
         const boardPart = FEN.getBoardPart(fen);

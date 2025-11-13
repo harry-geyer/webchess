@@ -6,13 +6,35 @@ export function getPieceChar(pieceSymbol) {
 }
 
 export class Board {
-    constructor(el, onMove) {
+    constructor(el, onMove, getTurn) {
         this.el = el;
         this.onMove = onMove;
         this.draggedPieceEl = null;
         this.startSquare = null;
         this.offsetX = 0;
         this.offsetY = 0;
+
+        if (!getTurn) {
+            this.getTurn = () => null;
+        } else if (typeof getTurn === 'function') {
+            this.getTurn = () => {
+                const v = getTurn();
+                if (v === 'w' || v === 'b') return v;
+                if (v === true || v === 'white' || v === 'W') return 'w';
+                if (v === false || v === 'black' || v === 'B') return 'b';
+                return null;
+            };
+        } else if (typeof getTurn === 'object' && typeof getTurn.getTurn === 'function') {
+            this.getTurn = () => {
+                const v = getTurn.getTurn();
+                if (v === 'w' || v === 'b') return v;
+                if (v === true || v === 'white' || v === 'W') return 'w';
+                if (v === false || v === 'black' || v === 'B') return 'b';
+                return null;
+            };
+        } else {
+            this.getTurn = () => null;
+        }
     }
 
     create() {
@@ -67,8 +89,20 @@ export class Board {
         const pieceEl = e.target.closest('.piece');
         if (!pieceEl) return;
 
-        this.startSquare = pieceEl.parentElement;
         const piece = pieceEl.dataset.piece;
+        const pieceIsWhite = piece === piece.toUpperCase();
+
+        const turn = this.getTurn();
+        if (turn) {
+            const whiteToMove = turn === 'w';
+            if (whiteToMove !== pieceIsWhite) {
+                pieceEl.classList.add('deny-pick');
+                setTimeout(() => pieceEl.classList.remove('deny-pick'), 200);
+                return;
+            }
+        }
+
+        this.startSquare = pieceEl.parentElement;
 
         const ghost = document.createElement('div');
         ghost.classList.add('piece');
