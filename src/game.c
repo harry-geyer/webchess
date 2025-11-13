@@ -100,7 +100,17 @@ bool game_apply_move(move_t* m)
         printf("need to release check\n");
         return false;
     }
-    set_piece(current_board, m->to, p);
+    if (PIECE_TYPE_EMPTY != m->promotion)
+    {
+        piece_t new_p;
+        new_p.colour = p->colour;
+        new_p.type = m->promotion;
+        set_piece(current_board, m->to, &new_p);
+    }
+    else
+    {
+        set_piece(current_board, m->to, p);
+    }
     piece_t empty = { PIECE_TYPE_EMPTY, COLOUR_NONE };
     set_piece(current_board, m->from, &empty);
 

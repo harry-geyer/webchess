@@ -22,13 +22,128 @@ import { FEN } from './fen/fen.js';
     let previousFEN = defaultFen;
     let moveGen = '';
 
-    const board = new Board(chessboardEl, (uci, piece) => {
-        if (wasm.applyMove(uci)) {
-            addMove(uci + piece);
-            updateUI();
-        }
-    }, () => FEN.getActiveColour(previousFEN),
-    (pos) => wasm.getAvailableMoves(pos));
+    function showPromotionDialog(sourceSquare, targetSquare, colour = 'w') {
+        return new Promise(resolve => {
+            const overlay = document.createElement('div');
+            overlay.className = 'promo-overlay';
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+
+            const box = document.createElement('div');
+            box.className = 'promo-box';
+            box.tabIndex = -1;
+
+            const title = document.createElement('div');
+            title.className = 'promo-title';
+            title.textContent = 'Choose promotion';
+
+            const buttons = document.createElement('div');
+            buttons.className = 'promo-buttons';
+
+            const isWhite = colour === 'w';
+            const choices = [
+                { letter: 'q', symbol: getPieceChar(isWhite ? 'Q' : 'q') },
+                { letter: 'r', symbol: getPieceChar(isWhite ? 'R' : 'r') },
+                { letter: 'b', symbol: getPieceChar(isWhite ? 'B' : 'b') },
+                { letter: 'n', symbol: getPieceChar(isWhite ? 'N' : 'n') }
+            ];
+            console.log(choices);
+
+            choices.forEach(c => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'promo-btn';
+                btn.dataset.promo = c.letter;
+                btn.textContent = c.symbol;
+                btn.style.fontFamily = 'Merida';
+                btn.style.fontSize = '48px';
+                btn.style.color = isWhite ? '#fff' : '#000';
+                btn.addEventListener('click', () => {
+                    cleanup();
+                    resolve(c.letter);
+                });
+                buttons.appendChild(btn);
+            });
+
+            box.appendChild(title);
+            box.appendChild(buttons);
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+
+            const keyHandler = (ev) => {
+                if (ev.key === 'Escape') {
+                    ev.preventDefault();
+                    cleanup();
+                    resolve(null);
+                    return;
+                }
+                const k = ev.key.toLowerCase();
+                if (['q','r','b','n'].includes(k)) {
+                    ev.preventDefault();
+                    cleanup();
+                    resolve(k);
+                }
+            };
+
+            const outsideHandler = (ev) => {
+                if (!box.contains(ev.target)) {
+                    cleanup();
+                    resolve(null);
+                }
+            };
+
+            function cleanup() {
+                document.removeEventListener('keydown', keyHandler, true);
+                overlay.removeEventListener('pointerdown', outsideHandler, true);
+                if (overlay.parentElement) overlay.remove();
+            }
+
+            document.addEventListener('keydown', keyHandler, true);
+            overlay.addEventListener('pointerdown', outsideHandler, true);
+        });
+    }
+
+    const board = new Board(
+        chessboardEl,
+        (uci, piece) => {
+            const isPawn = piece && piece.toLowerCase() === 'p';
+            const toRankChar = uci && uci.length >= 4 ? uci[3] : null;
+            const toRank = toRankChar ? parseInt(toRankChar, 10) : null;
+            const needsPromotion = isPawn && (toRank === 1 || toRank === 8) && uci.length === 4;
+
+            if (needsPromotion) {
+                const fromSq = uci.slice(0,2);
+                const toSq = uci.slice(2,4);
+
+                const isWhiteMove = FEN.getActiveColour(previousFEN) === 'w';
+                showPromotionDialog(fromSq, toSq, isWhiteMove ? 'w' : 'b').then(promoLetter => {
+                    if (!promoLetter) {
+                        return;
+                    }
+                    const promoUci = uci + promoLetter;
+                    if (wasm.applyMove(promoUci)) {
+                        addMove(promoUci);
+                        updateUI();
+                    } else {
+                        console.warn('applyMove rejected promotion move', promoUci);
+                    }
+                }).catch(err => {
+                    console.error('promotion dialog error', err);
+                });
+
+                return false;
+            }
+
+            if (wasm.applyMove(uci)) {
+                addMove(uci);
+                updateUI();
+                return true;
+            }
+            return false;
+        },
+        () => FEN.getActiveColour(previousFEN),
+        (pos) => wasm.getAvailableMoves(pos)
+    );
 
     function updateCapturedPieces(fen) {
         const boardPart = FEN.getBoardPart(fen);

@@ -6,6 +6,17 @@
 #include "move.h"
 
 
+static bool is_pawn_last_rank(board_t* board, move_t* m)
+{
+    piece_t* p = get_piece(board, m->from);
+    if (PIECE_TYPE_PAWN != p->type)
+        return false;
+    int to_y = index_to_y(board, m->to);
+    int last_rank = (p->colour == COLOUR_WHITE) ? board->height - 1 : 0;
+    return to_y == last_rank;
+}
+
+
 static bool is_pawn_move_legal(board_t* board, move_t* m, colour_t colour)
 {
     int from_x = index_to_x(board, m->from);
@@ -15,7 +26,14 @@ static bool is_pawn_move_legal(board_t* board, move_t* m, colour_t colour)
     int dx = to_x - from_x;
     int dy = to_y - from_y;
     int dir = (colour == COLOUR_WHITE) ? 1 : -1;
-    piece_t* target = &board->squares[m->to];
+    if (is_pawn_last_rank(board, m)
+        && (m->promotion == PIECE_TYPE_EMPTY
+            || m->promotion == PIECE_TYPE_PAWN
+            || m->promotion == PIECE_TYPE_KING))
+    {
+        return false;
+    }
+    piece_t* target = get_piece(board, m->to);
     if (dx == 0 && dy == dir && target->type == PIECE_TYPE_EMPTY)
     {
         return true;
@@ -58,7 +76,7 @@ static bool is_bishop_move_legal(board_t* board, move_t* m)
     int y = from_y + step_y;
     while (x != to_x && y != to_y)
     {
-        piece_t* p = &board->squares[coords_to_index(board, x, y)];
+        piece_t* p = get_piece(board, coords_to_index(board, x, y));
         if (p->type != PIECE_TYPE_EMPTY)
         {
             return false;
@@ -66,8 +84,8 @@ static bool is_bishop_move_legal(board_t* board, move_t* m)
         x += step_x;
         y += step_y;
     }
-    piece_t* target = &board->squares[m->to];
-    piece_t* piece  = &board->squares[m->from];
+    piece_t* target = get_piece(board, m->to);
+    piece_t* piece = get_piece(board, m->from);
     if (target->colour == piece->colour)
     {
         return false;
@@ -92,7 +110,7 @@ static bool is_rook_move_legal(board_t* board, move_t* m)
     int y = from_y + dy;
     while (x != to_x || y != to_y)
     {
-        piece_t* p = &board->squares[coords_to_index(board, x, y)];
+        piece_t* p = get_piece(board, coords_to_index(board, x, y));
         if (p->type != PIECE_TYPE_EMPTY)
         {
             return false;
@@ -100,8 +118,8 @@ static bool is_rook_move_legal(board_t* board, move_t* m)
         x += dx;
         y += dy;
     }
-    piece_t* target = &board->squares[m->to];
-    piece_t* piece  = &board->squares[m->from];
+    piece_t* target = get_piece(board, m->to);
+    piece_t* piece = get_piece(board, m->from);
 
     if (target->colour == piece->colour)
     {
@@ -139,8 +157,8 @@ static bool is_king_move_legal(board_t* board, move_t* m)
     int dx = abs(to_x - from_x);
     int dy = abs(to_y - from_y);
 
-    piece_t* target = &board->squares[m->to];
-    piece_t* piece  = &board->squares[m->from];
+    piece_t* target = get_piece(board, m->to);
+    piece_t* piece = get_piece(board, m->from);
 
     if (target->colour == piece->colour)
     {
@@ -155,7 +173,7 @@ static bool is_king_move_legal(board_t* board, move_t* m)
         bool king_side = (to_x > from_x);
         int rook_from_x = king_side ? board->width - 1 : 0;
         int rook_from = coords_to_index(board, rook_from_x, from_y);
-        piece_t* rook = &board->squares[rook_from];
+        piece_t* rook = get_piece(board, rook_from);
         if (rook->type != PIECE_TYPE_ROOK || rook->colour != piece->colour)
         {
             return false;
@@ -163,7 +181,7 @@ static bool is_king_move_legal(board_t* board, move_t* m)
         int step = king_side ? 1 : -1;
         for (int x = from_x + step; x != rook_from_x; x += step)
         {
-            piece_t* p = &board->squares[coords_to_index(board, x, from_y)];
+            piece_t* p = get_piece(board, coords_to_index(board, x, from_y));
             if (p->type != PIECE_TYPE_EMPTY)
             {
                 return false;
@@ -213,7 +231,7 @@ static bool is_square_attacked(board_t* board, int sq_index, colour_t by_colour)
 {
     for (int i = 0; i < board->width * board->height; i++)
     {
-        piece_t* p = &board->squares[i];
+        piece_t* p = get_piece(board, i);
         if (p->type == PIECE_TYPE_EMPTY || p->colour != by_colour)
             continue;
 
@@ -229,7 +247,7 @@ static int find_king(board_t* board, colour_t colour)
 {
     for (int i = 0; i < board->width * board->height; i++)
     {
-        piece_t* p = &board->squares[i];
+        piece_t* p = get_piece(board, i);
         if (p->type == PIECE_TYPE_KING && p->colour == colour)
             return i;
     }
@@ -280,13 +298,29 @@ int generate_moves(board_t* board, unsigned index, bool in_check, move_t* moves,
         if (is_move_legal(board, &m)
             && (!in_check || would_move_release_check(board, &m)))
         {
-            if (count < max_moves)
+            if (is_pawn_last_rank(board, &m))
             {
-                memcpy(&moves[count++], &m, sizeof(move_t));
+#define __GENERATE_MOVES_ADD_MOVE(_m)                                   \
+                if (count < max_moves)                                  \
+                {                                                       \
+                    memcpy(&moves[count++], &_m, sizeof(move_t));       \
+                }                                                       \
+                else                                                    \
+                {                                                       \
+                    break;                                              \
+                }
+                m.promotion = PIECE_TYPE_ROOK;
+                __GENERATE_MOVES_ADD_MOVE(m)
+                m.promotion = PIECE_TYPE_KNIGHT;
+                __GENERATE_MOVES_ADD_MOVE(m)
+                m.promotion = PIECE_TYPE_BISHOP;
+                __GENERATE_MOVES_ADD_MOVE(m)
+                m.promotion = PIECE_TYPE_QUEEN;
+                __GENERATE_MOVES_ADD_MOVE(m)
             }
             else
             {
-                break;
+                __GENERATE_MOVES_ADD_MOVE(m)
             }
         }
     }
@@ -299,7 +333,7 @@ bool generate_all_moves(board_t* board, colour_t colour, bool in_check, move_t* 
     int count = 0;
     for (int i = 0; i < board->width * board->height; i++)
     {
-        piece_t* p = &board->squares[i];
+        piece_t* p = get_piece(board, i);
         if (p->type == PIECE_TYPE_EMPTY || p->colour != colour)
             continue;
         count += generate_moves(board, i, in_check, &moves[count], max_moves - count);
@@ -319,7 +353,7 @@ bool has_legal_moves(board_t* board, colour_t colour)
 {
     for (int from = 0; from < board->width * board->height; from++)
     {
-        piece_t* p = &board->squares[from];
+        piece_t* p = get_piece(board, from);
         if (p->type == PIECE_TYPE_EMPTY || p->colour != colour)
             continue;
         for (int to = 0; to < board->width * board->height; to++)
