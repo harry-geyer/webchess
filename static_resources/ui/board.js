@@ -6,10 +6,35 @@ export function getPieceChar(pieceSymbol) {
 }
 
 export class Board {
-    constructor(el, onMove) {
+    constructor(el, onMove, getTurn) {
         this.el = el;
         this.onMove = onMove;
-        this.draggedSquare = null;
+        this.draggedPieceEl = null;
+        this.startSquare = null;
+        this.offsetX = 0;
+        this.offsetY = 0;
+
+        if (!getTurn) {
+            this.getTurn = () => null;
+        } else if (typeof getTurn === 'function') {
+            this.getTurn = () => {
+                const v = getTurn();
+                if (v === 'w' || v === 'b') return v;
+                if (v === true || v === 'white' || v === 'W') return 'w';
+                if (v === false || v === 'black' || v === 'B') return 'b';
+                return null;
+            };
+        } else if (typeof getTurn === 'object' && typeof getTurn.getTurn === 'function') {
+            this.getTurn = () => {
+                const v = getTurn.getTurn();
+                if (v === 'w' || v === 'b') return v;
+                if (v === true || v === 'white' || v === 'W') return 'w';
+                if (v === false || v === 'black' || v === 'B') return 'b';
+                return null;
+            };
+        } else {
+            this.getTurn = () => null;
+        }
     }
 
     create() {
@@ -21,17 +46,10 @@ export class Board {
                 sq.dataset.rank = r;
                 sq.dataset.file = f;
 
-                if (r === 0) {
-                    sq.dataset.fileLetter = 'abcdefgh'[f];
-                }
+                if (r === 0) sq.dataset.fileLetter = 'abcdefgh'[f];
+                if (f === 0) sq.dataset.rankNumber = (r + 1).toString();
 
-                if (f === 0) {
-                    sq.dataset.rankNumber = (r + 1).toString();
-                }
-
-                sq.addEventListener('dragstart', e => this.onDragStart(e));
-                sq.addEventListener('dragover', e => e.preventDefault());
-                sq.addEventListener('drop', e => this.onDrop(e));
+                sq.addEventListener('pointerdown', e => this.onPointerDown(e));
 
                 this.el.appendChild(sq);
             }
@@ -39,7 +57,6 @@ export class Board {
     }
 
     render(fen) {
-        const boardPart = FEN.getBoardPart(fen);
         const ranks = FEN.getRanks(fen);
         const squares = this.el.children;
         let idx = 0;
@@ -47,65 +64,98 @@ export class Board {
         for (const sq of squares) {
             sq.textContent = '';
             sq.removeAttribute('data-piece');
-            sq.draggable = false;
         }
 
         for (const rank of ranks) {
             for (const char of rank) {
-
                 if (isNaN(char)) {
                     const glyph = getPieceChar(char);
-                    squares[idx].innerHTML = '';
                     const pieceEl = document.createElement('div');
                     pieceEl.classList.add('piece');
                     pieceEl.textContent = glyph;
                     pieceEl.dataset.piece = char;
-                    squares[idx].appendChild(pieceEl);
 
+                    squares[idx].appendChild(pieceEl);
                     squares[idx].dataset.piece = char;
-                    squares[idx].draggable = true;
                     idx++;
                 } else {
-                    idx += parseInt(char);
+                    idx += parseInt(char, 10);
                 }
             }
         }
     }
 
-    onDragStart(e) {
-        const piece = e.target.dataset.piece;
-        if (!piece) return;
+    onPointerDown(e) {
+        const pieceEl = e.target.closest('.piece');
+        if (!pieceEl) return;
 
-        this.draggedSquare = e.target;
-        e.dataTransfer.setData('text/plain', '');
+        const piece = pieceEl.dataset.piece;
+        const pieceIsWhite = piece === piece.toUpperCase();
+
+        const turn = this.getTurn();
+        if (turn) {
+            const whiteToMove = turn === 'w';
+            if (whiteToMove !== pieceIsWhite) {
+                pieceEl.classList.add('deny-pick');
+                setTimeout(() => pieceEl.classList.remove('deny-pick'), 200);
+                return;
+            }
+        }
+
+        this.startSquare = pieceEl.parentElement;
 
         const ghost = document.createElement('div');
+        ghost.classList.add('piece');
         ghost.textContent = getPieceChar(piece);
-        ghost.style.fontSize = '44px';
-        ghost.style.fontFamily = '"Merida", Arial, sans-serif';
-        ghost.style.color = piece === piece.toUpperCase() ? '#fff' : '#000';
+
         ghost.style.position = 'absolute';
-        ghost.style.top = '-1000px';
-        ghost.style.left = '-1000px';
-        ghost.style.background = 'transparent';
+        ghost.style.zIndex = 1000;
         ghost.style.pointerEvents = 'none';
+        ghost.style.fontSize = window.getComputedStyle(pieceEl).fontSize;
+        ghost.style.fontFamily = '"Merida", Arial, sans-serif';
         ghost.style.lineHeight = '1';
         ghost.style.padding = '0';
+        ghost.style.userSelect = 'none';
+        ghost.style.color = piece === piece.toUpperCase() ? '#fff' : '#000';
 
         document.body.appendChild(ghost);
-        e.dataTransfer.setDragImage(ghost, 22, 22);
+        this.draggedPieceEl = ghost;
 
-        setTimeout(() => document.body.removeChild(ghost), 0);
+        const rect = pieceEl.getBoundingClientRect();
+        this.offsetX = e.clientX - rect.left;
+        this.offsetY = e.clientY - rect.top;
+
+        this.moveAt(e.clientX, e.clientY);
+
+        const moveHandler = e => this.moveAt(e.clientX, e.clientY);
+        const upHandler = e => this.onPointerUp(e, moveHandler, upHandler, piece);
+
+        document.addEventListener('pointermove', moveHandler);
+        document.addEventListener('pointerup', upHandler);
     }
 
-    onDrop(e) {
-        e.preventDefault();
-        const from = this.draggedSquare;
-        const to = e.currentTarget;
-        if (!from || from === to) return;
+    moveAt(clientX, clientY) {
+        if (!this.draggedPieceEl) return;
+        this.draggedPieceEl.style.left = clientX - this.offsetX + 'px';
+        this.draggedPieceEl.style.top = clientY - this.offsetY + 'px';
+    }
 
-        const uci = `${files[from.dataset.file]}${parseInt(from.dataset.rank)+1}${files[to.dataset.file]}${parseInt(to.dataset.rank)+1}`;
-        this.onMove(uci, from.dataset.piece);
-        this.draggedSquare = null;
+    onPointerUp(e, moveHandler, upHandler, piece) {
+        document.removeEventListener('pointermove', moveHandler);
+        document.removeEventListener('pointerup', upHandler);
+
+        const targetSq = document.elementFromPoint(e.clientX, e.clientY)?.closest('.square');
+
+        if (targetSq && targetSq !== this.startSquare) {
+            const uci = `${files[this.startSquare.dataset.file]}${parseInt(this.startSquare.dataset.rank, 10)+1}${files[targetSq.dataset.file]}${parseInt(targetSq.dataset.rank, 10)+1}`;
+            const valid = this.onMove(uci, piece);
+        }
+
+        if (this.draggedPieceEl) {
+            this.draggedPieceEl.remove();
+            this.draggedPieceEl = null;
+        }
+
+        this.startSquare = null;
     }
 }
