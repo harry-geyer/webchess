@@ -137,7 +137,7 @@ export class Board {
 
         const rect = pieceEl.getBoundingClientRect();
         this.offsetX = e.clientX - rect.left;
-        this.offsetY = e.clientY - rect.top;
+        this.offsetY = e.clientY - rect.top - rect.height / 2.;
         this.moveAt(e.clientX, e.clientY);
 
         if (this.getMovesFor) {
