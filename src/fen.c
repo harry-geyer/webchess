@@ -7,6 +7,9 @@
 #include "move.h"
 
 
+#define INDEX_INVALID           -1
+
+
 static piece_t fen_char_to_piece(char c)
 {
     piece_t p;
@@ -152,32 +155,70 @@ int generate_fen(const board_t* b, colour_t turn, char* out_fen, int max_len)
 }
 
 
+int pos_to_index(const board_t* b, const char* pos)
+{
+    if (b == NULL || pos == NULL)
+        return INDEX_INVALID;
+
+    if (pos[0] == '\0' || pos[1] == '\0')
+        return INDEX_INVALID;
+
+    unsigned char file_c = (unsigned char)pos[0];
+    unsigned char rank_c = (unsigned char)pos[1];
+
+    if (file_c < 'a' || file_c > 'h')
+        return INDEX_INVALID;
+    if (rank_c < '1' || rank_c > '8')
+        return INDEX_INVALID;
+
+    int file = file_c - 'a';
+    int rank = rank_c - '1';
+
+    return coords_to_index((board_t*)b, file, rank);
+}
+
+
+static int promotion_char_to_piece_type(char c)
+{
+    if (c == '\0')
+        return PIECE_TYPE_EMPTY;
+    switch (tolower((unsigned char)c))
+    {
+        case 'q': return PIECE_TYPE_QUEEN;
+        case 'r': return PIECE_TYPE_ROOK;
+        case 'b': return PIECE_TYPE_BISHOP;
+        case 'n': return PIECE_TYPE_KNIGHT;
+        default:  return PIECE_TYPE_EMPTY;
+    }
+}
+
+
 move_t uci_to_move(const board_t* b, const char* uci)
 {
     move_t m;
-    m.from = coords_to_index((board_t*)b, uci[0] - 'a', uci[1] - '1');
-    m.to = coords_to_index((board_t*)b, uci[2] - 'a', uci[3] - '1');
+    m.from = INDEX_INVALID;
+    m.to = INDEX_INVALID;
     m.promotion = PIECE_TYPE_EMPTY;
+
+    if (b == NULL || uci == NULL) return m;
+
+    if (strlen(uci) < 4)
+        return m;
+
+    int from = pos_to_index(b, &uci[0]);
+    int to = pos_to_index(b, &uci[2]);
+
+    if (from == INDEX_INVALID || to == INDEX_INVALID)
+        return m;
+
+    m.from = from;
+    m.to = to;
+
     if (uci[4])
-    {
-        switch (uci[4])
-        {
-            case 'q':
-                m.promotion = PIECE_TYPE_QUEEN;
-                break;
-            case 'r':
-                m.promotion = PIECE_TYPE_ROOK;
-                break;
-            case 'b':
-                m.promotion = PIECE_TYPE_BISHOP;
-                break;
-            case 'n':
-                m.promotion = PIECE_TYPE_KNIGHT;
-                break;
-            default:
-                break;
-        }
-    }
+        m.promotion = promotion_char_to_piece_type(uci[4]);
+    else
+        m.promotion = PIECE_TYPE_EMPTY;
+
     return m;
 }
 

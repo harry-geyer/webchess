@@ -44,7 +44,7 @@ serve: default
 	python3 -m http.server -d $(WEBROOT)
 
 test: $(LIB) $(TESTS)
-	pytest --rootdir=$(TEST_BUILD_DIR) -v $(TEST_DIR)
+	pytest -vv --rootdir=$(TEST_BUILD_DIR) -v $(TEST_DIR)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)

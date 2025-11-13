@@ -110,6 +110,12 @@ bool game_apply_move(move_t* m)
 }
 
 
+int game_get_available_moves(unsigned index, move_t* moves, unsigned max_moves)
+{
+    return generate_moves(current_board, index, STATUS_CHECK == current_status, moves, max_moves);
+}
+
+
 game_status_t game_get_status(void)
 {
     return current_status;
