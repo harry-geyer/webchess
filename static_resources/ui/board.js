@@ -21,6 +21,8 @@ export class Board {
         this._moved = false;
         this._moveThreshold = 8;
 
+        this._selectedSquare = null;
+
         if (!getTurn) {
             this.getTurn = () => null;
         } else if (typeof getTurn === 'function') {
@@ -71,7 +73,7 @@ export class Board {
         for (const sq of squares) {
             sq.textContent = '';
             sq.removeAttribute('data-piece');
-            const hints = sq.querySelectorAll('.hint, .hint-dot, .hint-capture');
+            const hints = sq.querySelectorAll('.hint, .hint-dot, .hint-capture, .hint-wrapper');
             hints.forEach(h => h.remove());
         }
 
@@ -95,10 +97,13 @@ export class Board {
     }
 
     onPointerDown(e) {
-        this.clearHighlights();
-
         const pieceEl = e.target.closest('.piece');
-        if (!pieceEl) return;
+        const targetSq = e.target.closest('.square');
+
+        if (!pieceEl) {
+            this.clearHighlights();
+            return;
+        }
 
         this._pointerDownX = e.clientX;
         this._pointerDownY = e.clientY;
@@ -106,24 +111,18 @@ export class Board {
 
         this.startSquare = pieceEl.parentElement;
         const piece = pieceEl.dataset.piece;
-
         const pieceIsWhite = piece === piece.toUpperCase();
-
         const turn = this.getTurn();
-        if (turn) {
-            const whiteToMove = turn === 'w';
-            if (whiteToMove !== pieceIsWhite) {
-                pieceEl.classList.add('deny-pick');
-                setTimeout(() => pieceEl.classList.remove('deny-pick'), 200);
-                this.startSquare = null;
-                return;
-            }
+        if (turn && (turn === 'w') !== pieceIsWhite) {
+            pieceEl.classList.add('deny-pick');
+            setTimeout(() => pieceEl.classList.remove('deny-pick'), 200);
+            this.startSquare = null;
+            return;
         }
 
         const ghost = document.createElement('div');
         ghost.classList.add('piece');
         ghost.textContent = getPieceChar(piece);
-
         ghost.style.position = 'absolute';
         ghost.style.zIndex = 1000;
         ghost.style.pointerEvents = 'none';
@@ -132,23 +131,31 @@ export class Board {
         ghost.style.lineHeight = '1';
         ghost.style.padding = '0';
         ghost.style.userSelect = 'none';
-        ghost.style.color = piece === piece.toUpperCase() ? '#fff' : '#000';
-
+        ghost.style.color = pieceIsWhite ? '#fff' : '#000';
         document.body.appendChild(ghost);
         this.draggedPieceEl = ghost;
 
         const rect = pieceEl.getBoundingClientRect();
         this.offsetX = e.clientX - rect.left;
         this.offsetY = e.clientY - rect.top;
-
         this.moveAt(e.clientX, e.clientY);
+
+        if (this.getMovesFor) {
+            const fileIdx = parseInt(this.startSquare.dataset.file, 10);
+            const rankIdx = parseInt(this.startSquare.dataset.rank, 10);
+            const pos = `${files[fileIdx]}${rankIdx + 1}`;
+            try {
+                const moves = this.getMovesFor(pos) || [];
+                this.highlightMoves(moves);
+            } catch (err) {
+                console.error('getMovesFor threw:', err);
+            }
+        }
 
         const moveHandler = ev => {
             const dx = ev.clientX - this._pointerDownX;
             const dy = ev.clientY - this._pointerDownY;
-            if (!this._moved && Math.hypot(dx, dy) > this._moveThreshold) {
-                this._moved = true;
-            }
+            if (!this._moved && Math.hypot(dx, dy) > this._moveThreshold) this._moved = true;
             this.moveAt(ev.clientX, ev.clientY);
         };
         const upHandler = ev => this.onPointerUp(ev, moveHandler, upHandler, piece);
@@ -170,25 +177,31 @@ export class Board {
         const targetSq = document.elementFromPoint(e.clientX, e.clientY)?.closest('.square');
 
         if (this.startSquare && targetSq === this.startSquare && !this._moved) {
-            const fileIdx = parseInt(this.startSquare.dataset.file, 10);
-            const rankIdx = parseInt(this.startSquare.dataset.rank, 10);
-            const pos = `${files[fileIdx]}${rankIdx + 1}`;
-
-            if (this.getMovesFor) {
+            if (this._selectedSquare === this.startSquare) {
+                this.clearHighlights();
+            } else if (this.getMovesFor) {
+                const fileIdx = parseInt(this.startSquare.dataset.file, 10);
+                const rankIdx = parseInt(this.startSquare.dataset.rank, 10);
+                const pos = `${files[fileIdx]}${rankIdx + 1}`;
                 try {
                     const moves = this.getMovesFor(pos) || [];
                     this.highlightMoves(moves);
+                    this._selectedSquare = this.startSquare; // now mark as selected (click confirmed)
                 } catch (err) {
                     console.error('getMovesFor threw:', err);
                 }
             }
-        } else if (targetSq && targetSq !== this.startSquare) {
+        }
+        else if (targetSq && targetSq !== this.startSquare) {
             const uci = `${files[this.startSquare.dataset.file]}${parseInt(this.startSquare.dataset.rank, 10)+1}${files[targetSq.dataset.file]}${parseInt(targetSq.dataset.rank, 10)+1}`;
             try {
-                const valid = this.onMove(uci, piece);
+                this.onMove(uci, piece);
             } catch (err) {
                 console.error('onMove callback error:', err);
             }
+        }
+        else if (targetSq && !targetSq.querySelector('.piece')) {
+            this.clearHighlights();
         }
 
         if (this.draggedPieceEl) {
@@ -203,15 +216,15 @@ export class Board {
     clearHighlights() {
         const hints = this.el.querySelectorAll('.square .hint-wrapper');
         hints.forEach(h => h.remove());
+        this._selectedSquare = null;
     }
 
     highlightMoves(moves = []) {
-        console.log("HIGHLIGHTING");
         this.clearHighlights();
 
         for (const mv of moves) {
             if (!mv || mv.length < 4) continue;
-            const dst = mv.slice(2, 4); // e.g. "e4"
+            const dst = mv.slice(2, 4);
             const fileLetter = dst[0];
             const rankChar = dst[1];
 
