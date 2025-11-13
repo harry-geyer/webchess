@@ -27,7 +27,8 @@ import { FEN } from './fen/fen.js';
             addMove(uci + piece);
             updateUI();
         }
-    }, () => FEN.getActiveColour(previousFEN));
+    }, () => FEN.getActiveColour(previousFEN),
+    (pos) => wasm.getAvailableMoves(pos));
 
     function updateCapturedPieces(fen) {
         const boardPart = FEN.getBoardPart(fen);

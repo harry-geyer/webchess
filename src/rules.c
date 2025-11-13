@@ -263,6 +263,37 @@ bool would_move_release_check(board_t* board, move_t* m)
 }
 
 
+int generate_moves(board_t* board, unsigned index, bool in_check, move_t* moves, int max_moves)
+{
+    if (0 >= max_moves)
+        return 0;
+
+    int count = 0;
+    for (int j = 0; j < board->width * board->height; j++)
+    {
+        move_t m =
+        {
+            .from = index,
+            .to = j,
+            .promotion = PIECE_TYPE_EMPTY,
+        };
+        if (is_move_legal(board, &m)
+            && (!in_check || would_move_release_check(board, &m)))
+        {
+            if (count < max_moves)
+            {
+                memcpy(&moves[count++], &m, sizeof(move_t));
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+    return count;
+}
+
+
 bool generate_all_moves(board_t* board, colour_t colour, bool in_check, move_t* moves, int max_moves, int* move_count)
 {
     int count = 0;
@@ -271,28 +302,7 @@ bool generate_all_moves(board_t* board, colour_t colour, bool in_check, move_t* 
         piece_t* p = &board->squares[i];
         if (p->type == PIECE_TYPE_EMPTY || p->colour != colour)
             continue;
-
-        for (int j = 0; j < board->width * board->height; j++)
-        {
-            move_t m =
-            {
-                .from = i,
-                .to = j,
-                .promotion = PIECE_TYPE_EMPTY,
-            };
-            if (is_move_legal(board, &m)
-                && (!in_check || would_move_release_check(board, &m)))
-            {
-                if (count < max_moves)
-                {
-                    memcpy(&moves[count++], &m, sizeof(move_t));
-                }
-                else
-                {
-                    break;
-                }
-            }
-        }
+        count += generate_moves(board, i, in_check, &moves[count], max_moves - count);
     }
     *move_count = count;
     return count > 0;

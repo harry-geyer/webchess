@@ -117,3 +117,33 @@ bool apply_move_uci(const char* uci)
     }
     return true;
 }
+
+
+EMSCRIPTEN_KEEPALIVE
+int get_available_moves_uci(const char* pos, char* buf, unsigned buflen)
+{
+    board_t* b = game_get_board();
+    int index = pos_to_index(b, pos);
+    unsigned max_moves = b->height * b->width;
+    move_t* moves = malloc(sizeof(move_t) * max_moves);
+    if (!moves)
+        return -1;
+    int move_count = game_get_available_moves(index, moves, max_moves);
+    char* p = buf;
+    int len = 0;
+    for (int i = 0; i < move_count; i++)
+    {
+        len += move_to_uci(b, &moves[i], p, buflen - len);
+        if (len + 1 >= buflen)
+        {
+            buf[buflen-1] = '\0';
+            break;
+        }
+        buf[len++] = ',';
+        p = buf + len;
+    }
+    buf[--len] = '\0';
+    free(moves);
+    printf("available moves for pos '%s': %.*s\n", pos, len, buf);
+    return len;
+}

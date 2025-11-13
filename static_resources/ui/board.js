@@ -6,13 +6,20 @@ export function getPieceChar(pieceSymbol) {
 }
 
 export class Board {
-    constructor(el, onMove, getTurn) {
+    constructor(el, onMove, getTurn, getMovesFor) {
         this.el = el;
         this.onMove = onMove;
+        this.getMovesFor = (typeof getMovesFor === 'function') ? getMovesFor : null;
+
         this.draggedPieceEl = null;
         this.startSquare = null;
         this.offsetX = 0;
         this.offsetY = 0;
+
+        this._pointerDownX = 0;
+        this._pointerDownY = 0;
+        this._moved = false;
+        this._moveThreshold = 8;
 
         if (!getTurn) {
             this.getTurn = () => null;
@@ -43,8 +50,8 @@ export class Board {
             for (let f = 0; f < 8; f++) {
                 const sq = document.createElement('div');
                 sq.classList.add('square', (r + f) % 2 === 0 ? 'white' : 'black');
-                sq.dataset.rank = r;
-                sq.dataset.file = f;
+                sq.dataset.rank = r.toString();
+                sq.dataset.file = f.toString();
 
                 if (r === 0) sq.dataset.fileLetter = 'abcdefgh'[f];
                 if (f === 0) sq.dataset.rankNumber = (r + 1).toString();
@@ -64,6 +71,8 @@ export class Board {
         for (const sq of squares) {
             sq.textContent = '';
             sq.removeAttribute('data-piece');
+            const hints = sq.querySelectorAll('.hint, .hint-dot, .hint-capture');
+            hints.forEach(h => h.remove());
         }
 
         for (const rank of ranks) {
@@ -86,10 +95,18 @@ export class Board {
     }
 
     onPointerDown(e) {
+        this.clearHighlights();
+
         const pieceEl = e.target.closest('.piece');
         if (!pieceEl) return;
 
+        this._pointerDownX = e.clientX;
+        this._pointerDownY = e.clientY;
+        this._moved = false;
+
+        this.startSquare = pieceEl.parentElement;
         const piece = pieceEl.dataset.piece;
+
         const pieceIsWhite = piece === piece.toUpperCase();
 
         const turn = this.getTurn();
@@ -98,11 +115,10 @@ export class Board {
             if (whiteToMove !== pieceIsWhite) {
                 pieceEl.classList.add('deny-pick');
                 setTimeout(() => pieceEl.classList.remove('deny-pick'), 200);
+                this.startSquare = null;
                 return;
             }
         }
-
-        this.startSquare = pieceEl.parentElement;
 
         const ghost = document.createElement('div');
         ghost.classList.add('piece');
@@ -127,8 +143,15 @@ export class Board {
 
         this.moveAt(e.clientX, e.clientY);
 
-        const moveHandler = e => this.moveAt(e.clientX, e.clientY);
-        const upHandler = e => this.onPointerUp(e, moveHandler, upHandler, piece);
+        const moveHandler = ev => {
+            const dx = ev.clientX - this._pointerDownX;
+            const dy = ev.clientY - this._pointerDownY;
+            if (!this._moved && Math.hypot(dx, dy) > this._moveThreshold) {
+                this._moved = true;
+            }
+            this.moveAt(ev.clientX, ev.clientY);
+        };
+        const upHandler = ev => this.onPointerUp(ev, moveHandler, upHandler, piece);
 
         document.addEventListener('pointermove', moveHandler);
         document.addEventListener('pointerup', upHandler);
@@ -146,9 +169,26 @@ export class Board {
 
         const targetSq = document.elementFromPoint(e.clientX, e.clientY)?.closest('.square');
 
-        if (targetSq && targetSq !== this.startSquare) {
+        if (this.startSquare && targetSq === this.startSquare && !this._moved) {
+            const fileIdx = parseInt(this.startSquare.dataset.file, 10);
+            const rankIdx = parseInt(this.startSquare.dataset.rank, 10);
+            const pos = `${files[fileIdx]}${rankIdx + 1}`;
+
+            if (this.getMovesFor) {
+                try {
+                    const moves = this.getMovesFor(pos) || [];
+                    this.highlightMoves(moves);
+                } catch (err) {
+                    console.error('getMovesFor threw:', err);
+                }
+            }
+        } else if (targetSq && targetSq !== this.startSquare) {
             const uci = `${files[this.startSquare.dataset.file]}${parseInt(this.startSquare.dataset.rank, 10)+1}${files[targetSq.dataset.file]}${parseInt(targetSq.dataset.rank, 10)+1}`;
-            const valid = this.onMove(uci, piece);
+            try {
+                const valid = this.onMove(uci, piece);
+            } catch (err) {
+                console.error('onMove callback error:', err);
+            }
         }
 
         if (this.draggedPieceEl) {
@@ -157,5 +197,50 @@ export class Board {
         }
 
         this.startSquare = null;
+        this._moved = false;
+    }
+
+    clearHighlights() {
+        const hints = this.el.querySelectorAll('.square .hint-wrapper');
+        hints.forEach(h => h.remove());
+    }
+
+    highlightMoves(moves = []) {
+        console.log("HIGHLIGHTING");
+        this.clearHighlights();
+
+        for (const mv of moves) {
+            if (!mv || mv.length < 4) continue;
+            const dst = mv.slice(2, 4); // e.g. "e4"
+            const fileLetter = dst[0];
+            const rankChar = dst[1];
+
+            const fileIdx = files.indexOf(fileLetter);
+            const rankIdx = parseInt(rankChar, 10) - 1;
+            if (fileIdx < 0 || isNaN(rankIdx) || rankIdx < 0 || rankIdx > 7) continue;
+
+            const sq = this.el.querySelector(`.square[data-file="${fileIdx}"][data-rank="${rankIdx}"]`);
+            if (!sq) continue;
+
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('hint-wrapper');
+
+            if (sq.dataset.piece) {
+                const cap = document.createElement('div');
+                cap.classList.add('hint-capture');
+                ['tl','tr','bl','br'].forEach(cn => {
+                    const sp = document.createElement('span');
+                    sp.classList.add('corner', cn);
+                    cap.appendChild(sp);
+                });
+                wrapper.appendChild(cap);
+            } else {
+                const dot = document.createElement('div');
+                dot.classList.add('hint-dot');
+                wrapper.appendChild(dot);
+            }
+
+            sq.appendChild(wrapper);
+        }
     }
 }
