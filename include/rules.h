@@ -8,6 +8,7 @@
 
 bool is_pawn_last_rank(board_t* board, move_t* m, colour_t colour);
 bool is_move_legal(board_t* board, move_t* m);
+int find_king(board_t* board, colour_t colour);
 bool is_in_check(board_t* board, colour_t colour);
 int generate_moves(board_t* board, unsigned index, bool in_check, move_t* moves, int max_moves);
 bool generate_all_moves(board_t* board, colour_t colour, bool in_check, move_t* moves, int max_moves, int* move_count);

@@ -8,6 +8,7 @@
 #include "game.h"
 #include "rules.h"
 #include "fen.h"
+#include "util.h"
 
 
 static bool tile_is_white(unsigned index, unsigned width)
@@ -42,25 +43,26 @@ static unsigned can_be_taken(board_t* board, colour_t turn, unsigned index)
 }
 
 
-static unsigned can_move_be_taken(board_t* board, colour_t turn, move_t* move)
+static unsigned can_move_be_taken(board_t* board, board_t* consider_board, colour_t turn, move_t* move)
 {
-    board_t* temp = copy_board(board);
+    if (!copy_board(consider_board, board))
+    {
+        raise_error(ENOMEM, "failed to copy board\n"); /* exits here */
+        return 0;
+    }
 
     /* assume given move IS legal */
 
-    piece_t* p = get_piece(temp, move->from);
-    set_piece(temp, move->to, p);
+    piece_t* p = get_piece(consider_board, move->from);
+    set_piece(consider_board, move->to, p);
     piece_t empty = { PIECE_TYPE_EMPTY, COLOUR_NONE };
-    set_piece(temp, move->from, &empty);
+    set_piece(consider_board, move->from, &empty);
 
-    int count = can_be_taken(temp, turn, move->to);
-
-    destroy_board(temp);
-    return count;
+    return can_be_taken(consider_board, turn, move->to);
 }
 
 
-static double gen_move_value(board_t* board, colour_t turn, move_t* move)
+static double gen_move_value(board_t* board, board_t* consider_board, colour_t turn, move_t* move)
 {
     double value = 0.;
     piece_t* p = get_piece(board, move->from);
@@ -71,7 +73,7 @@ static double gen_move_value(board_t* board, colour_t turn, move_t* move)
         && (COLOUR_WHITE == turn) == from_white)
     {
         /* is a bishop on the wrong colour square */
-        value = 10000. * (double)can_move_be_taken(board, turn, move);
+        value = 10000. * (double)can_move_be_taken(board, consider_board, turn, move);
         return value;
     }
 
@@ -96,11 +98,12 @@ static move_t* select_move(board_t* board, colour_t turn, move_t* moves, unsigne
     unsigned num_fav_moves = 0;
 
     double fav_move_value = 0.;
+    board_t* consider_board = duplicate_board(board);
 
     for (unsigned i = 0; i < num_moves; i++)
     {
         move_t* consider_move = &moves[i];
-        double new_value = gen_move_value(board, turn, consider_move);
+        double new_value = gen_move_value(board, consider_board, turn, consider_move);
         if (!num_fav_moves)
         {
             fav_moves_index[num_fav_moves++] = i;
@@ -117,6 +120,7 @@ static move_t* select_move(board_t* board, colour_t turn, move_t* moves, unsigne
             fav_moves_index[num_fav_moves++] = i;
         }
     }
+    destroy_board(consider_board);
 
     if (!num_fav_moves)
     {

@@ -23,7 +23,20 @@ void destroy_board(board_t* b)
 }
 
 
-board_t* copy_board(board_t* b)
+bool copy_board(board_t* new_b, board_t* b)
+{
+    if (new_b->height != b->height
+        || new_b->width != b->width)
+    {
+        return false;
+    }
+    unsigned mem_squares_size = sizeof(piece_t) * new_b->height * new_b->width;
+    memcpy(new_b->squares, b->squares, mem_squares_size);
+    return true;
+}
+
+
+board_t* duplicate_board(board_t* b)
 {
     board_t* board = malloc(sizeof(board_t));
     board->height = b->height;

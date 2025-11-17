@@ -4,6 +4,7 @@
 
 #include "board.h"
 #include "move.h"
+#include "util.h"
 
 
 static bool is_pawn_last_rank(board_t* board, move_t* m)
@@ -243,7 +244,7 @@ static bool is_square_attacked(board_t* board, int sq_index, colour_t by_colour)
 }
 
 
-static int find_king(board_t* board, colour_t colour)
+int find_king(board_t* board, colour_t colour)
 {
     for (int i = 0; i < board->width * board->height; i++)
     {
@@ -264,19 +265,21 @@ bool is_in_check(board_t* board, colour_t colour)
 }
 
 
-bool would_move_release_check(board_t* board, move_t* m)
+bool would_move_release_check(board_t* board, board_t* consider_board, move_t* m)
 {
-    board_t* temp = copy_board(board);
+    if (!copy_board(consider_board, board))
+    {
+        raise_error(ENOMEM, "failed to copy board\n"); /* exits here */
+        return false;
+    }
 
     piece_t* p = get_piece(board, m->from);
-    set_piece(temp, m->to, p);
+    set_piece(consider_board, m->to, p);
     piece_t empty = { PIECE_TYPE_EMPTY, COLOUR_NONE };
-    set_piece(temp, m->from, &empty);
+    set_piece(consider_board, m->from, &empty);
 
-    colour_t colour = temp->squares[m->to].colour;
-    bool in_check = is_in_check(temp, colour);
-
-    destroy_board(temp);
+    colour_t colour = consider_board->squares[m->to].colour;
+    bool in_check = is_in_check(consider_board, colour);
     return !in_check;
 }
 
@@ -287,6 +290,7 @@ int generate_moves(board_t* board, unsigned index, bool in_check, move_t* moves,
         return 0;
 
     int count = 0;
+    board_t* consider_board = duplicate_board(board);
     for (int j = 0; j < board->width * board->height; j++)
     {
         move_t m =
@@ -296,7 +300,7 @@ int generate_moves(board_t* board, unsigned index, bool in_check, move_t* moves,
             .promotion = PIECE_TYPE_EMPTY,
         };
         if (is_move_legal(board, &m)
-            && (!in_check || would_move_release_check(board, &m)))
+            && (!in_check || would_move_release_check(board, consider_board, &m)))
         {
             if (is_pawn_last_rank(board, &m))
             {
@@ -324,6 +328,7 @@ int generate_moves(board_t* board, unsigned index, bool in_check, move_t* moves,
             }
         }
     }
+    destroy_board(consider_board);
     return count;
 }
 
@@ -343,14 +348,15 @@ bool generate_all_moves(board_t* board, colour_t colour, bool in_check, move_t* 
 }
 
 
-static bool would_move_cause_check(board_t* board, move_t* m)
+static bool would_move_cause_check(board_t* board, board_t* consider_board, move_t* m)
 {
-    return !would_move_release_check(board, m);
+    return !would_move_release_check(board, consider_board, m);
 }
 
 
 bool has_legal_moves(board_t* board, colour_t colour)
 {
+    board_t* consider_board = duplicate_board(board);
     for (int from = 0; from < board->width * board->height; from++)
     {
         piece_t* p = get_piece(board, from);
@@ -362,9 +368,13 @@ bool has_legal_moves(board_t* board, colour_t colour)
             if (!is_move_legal(board, &m))
                 continue;
 
-            if (COLOUR_NONE == would_move_cause_check(board, &m))
+            if (COLOUR_NONE == would_move_cause_check(board, consider_board, &m))
+            {
+                destroy_board(consider_board);
                 return true;
+            }
         }
     }
+    destroy_board(consider_board);
     return false;
 }
