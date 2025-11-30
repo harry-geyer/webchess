@@ -51,10 +51,22 @@ static bool is_pawn_move_legal(board_t* board, move_t* m, colour_t colour)
             }
         }
     }
-    if (abs(dx) == 1 && dy == dir && target->type != PIECE_TYPE_EMPTY && target->colour != colour)
+
+    if (abs(dx) == 1 && dy == dir)
     {
-        return true;
+        if (target->type != PIECE_TYPE_EMPTY && target->colour != colour)
+        {
+            return true;
+        }
+
+        int captured_idx = m->to - ((colour == COLOUR_WHITE) ? board->width : -board->width);
+        piece_t* captured = get_piece(board, captured_idx);
+        if (captured->type == PIECE_TYPE_PAWN && captured->colour != colour)
+        {
+            return true;
+        }
     }
+
     return false;
 }
 
@@ -278,8 +290,18 @@ bool would_move_release_check(board_t* board, board_t* consider_board, move_t* m
     piece_t empty = { PIECE_TYPE_EMPTY, COLOUR_NONE };
     set_piece(consider_board, m->from, &empty);
 
-    colour_t colour = consider_board->squares[m->to].colour;
-    bool in_check = is_in_check(consider_board, colour);
+    if (p->type == PIECE_TYPE_PAWN && get_piece(board, m->to)->type == PIECE_TYPE_EMPTY)
+    {
+        if (abs(index_to_x(board, m->to) - index_to_x(board, m->from)) == 1)
+        {
+            int captured_idx = m->to - ((p->colour == COLOUR_WHITE) ? board->width : -board->width);
+            piece_t* captured = get_piece(board, captured_idx);
+            if (captured->type == PIECE_TYPE_PAWN && captured->colour != p->colour)
+                set_piece(consider_board, captured_idx, &empty);
+        }
+    }
+
+    bool in_check = is_in_check(consider_board, p->colour);
     return !in_check;
 }
 
@@ -313,14 +335,11 @@ int generate_moves(board_t* board, unsigned index, bool in_check, move_t* moves,
                 {                                                       \
                     break;                                              \
                 }
-                m.promotion = PIECE_TYPE_ROOK;
-                __GENERATE_MOVES_ADD_MOVE(m)
-                m.promotion = PIECE_TYPE_KNIGHT;
-                __GENERATE_MOVES_ADD_MOVE(m)
-                m.promotion = PIECE_TYPE_BISHOP;
-                __GENERATE_MOVES_ADD_MOVE(m)
-                m.promotion = PIECE_TYPE_QUEEN;
-                __GENERATE_MOVES_ADD_MOVE(m)
+
+                m.promotion = PIECE_TYPE_ROOK;   __GENERATE_MOVES_ADD_MOVE(m)
+                m.promotion = PIECE_TYPE_KNIGHT; __GENERATE_MOVES_ADD_MOVE(m)
+                m.promotion = PIECE_TYPE_BISHOP; __GENERATE_MOVES_ADD_MOVE(m)
+                m.promotion = PIECE_TYPE_QUEEN;  __GENERATE_MOVES_ADD_MOVE(m)
             }
             else
             {
