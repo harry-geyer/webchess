@@ -11,8 +11,11 @@ TEST_DIR:=$(PROJ_DIR)/tests
 TEST_BUILD_DIR:=$(BUILD_DIR)/tests
 
 WCC:=emcc
-CFLAGS:=-O3 -Wall -Werror -pedantic
+CFLAGS:=-O3 -Wall -Werror -pedantic -std=c11
+CFLAGS+=-flto
+CFLAGS+=-fstack-protector-strong -D_FORTIFY_SOURCE=2
 CFLAGS+=-I$(INC_DIR) -I$(LIB_DIR)
+NATIVE_CFLAGS:=-march=native
 EMCCFLAGS:= --bind \
             -s ASSERTIONS=1 \
             -s MODULARIZE=1 \
@@ -35,7 +38,7 @@ TESTS:=$(shell find $(TEST_DIR) -type f -name "*.py")
 
 default: all
 
-all: $(WASM) $(ASSETS) $(TEST_BUILD_DIR)/.coverage_complete
+all: $(WASM) $(ASSETS) $(TEST_BUILD_DIR)/.coverage_complete $(WEBROOT)/tests/index.html
 
 clean:
 	rm -rf $(BUILD_DIR)
@@ -60,17 +63,18 @@ $(ASSETS): $(WEBROOT)/%: $(STATIC_RESOURCE_DIR)/%
 
 $(TEST_BUILD_DIR)/objs/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
-	$(CC) -fPIC -fprofile-arcs -ftest-coverage -c -o $@ $(CFLAGS) $<
+	$(CC) -fPIC -fprofile-arcs -ftest-coverage -c -o $@ $(CFLAGS) $(NATIVE_CFLAGS) $<
 
 $(LIB): $(LIB_OBJS)
 	@mkdir -p $(@D)
-	$(CC) -shared -o $@ $(CFLAGS) $^ -lgcov
+	$(CC) -shared -o $@ $(CFLAGS) $(NATIVE_CFLAGS) $^ -lgcov
 
-$(TEST_BUILD_DIR)/.test_complete: $(LIB) $(TESTS)
-	pytest --rootdir=$(TEST_BUILD_DIR) -v $(TEST_DIR)
+$(WEBROOT)/tests/index.html: $(LIB) $(TESTS)
+	@mkdir -p $(@D)
+	pytest --html=$@ --css=$(TEST_DIR)/pytest.css --rootdir=$(TEST_BUILD_DIR) -v $(TEST_DIR)
 	@touch $@
 
-$(TEST_BUILD_DIR)/coverage.info: $(TEST_BUILD_DIR)/.test_complete
+$(TEST_BUILD_DIR)/coverage.info: $(WEBROOT)/tests/index.html
 	@mkdir -p $(@D)
 	lcov --capture --directory $(TEST_BUILD_DIR)/objs --output-file $@
 
